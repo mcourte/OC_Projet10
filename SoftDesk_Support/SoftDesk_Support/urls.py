@@ -23,8 +23,8 @@ from authentication.views import CustomUserViewSet
 
 # Ici nous créons notre routeur
 router = routers.SimpleRouter()
-# Puis lui déclarons une url basée sur le mot clé ‘category’ et notre view
-# afin que l’url générée soit celle que nous souhaitons ‘/api/category/’
+# Puis lui déclarons une url basée sur le mot clé ‘user’ et notre view
+# afin que l’url générée soit celle que nous souhaitons ‘/api/user/’
 router.register('user', CustomUserViewSet, basename='user')
 
 urlpatterns = [
