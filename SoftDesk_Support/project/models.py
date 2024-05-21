@@ -1,6 +1,7 @@
 from django.db import models
 import uuid
 from django.conf import settings
+from authentication.models import CustomUser
 
 
 class Project(models.Model):
@@ -29,6 +30,21 @@ class Project(models.Model):
         related_name='contributions',
         help_text='Project contributors'
     )
+
+
+class Contributor(models.Model):
+    """Model representing a contributor."""
+
+    contributor = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+    project = models.ForeignKey(
+        Project,
+        on_delete=models.CASCADE,
+        related_name="contributor_relationship",
+        help_text="Project to which the contributor contributes",
+    )
+
+    def __str__(self):
+        return f"{self.contributor.username} - {self.project.name}"
 
 
 class Issue(models.Model):
@@ -148,10 +164,14 @@ class Comment(models.Model):
         help_text="Comment body"
     )
 
-    issue_id = models.UUIDField(
-        verbose_name="issue ID",
-        help_text="ID of the issue to which the comment belongs"
+    issue = models.ForeignKey(
+        Issue,
+        on_delete=models.CASCADE,
+        blank=True,
+        related_name="comments",
+        verbose_name=("related issue"),
+        help_text="Issue associated with comment",
     )
 
     def __str__(self):
-        return self.name
+        return f"{self.name} | {self.issue}"
