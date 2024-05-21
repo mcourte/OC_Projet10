@@ -39,7 +39,9 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'authentication',
-    'project'
+    'project',
+    'SoftDesk_Support'
+
 ]
 
 MIDDLEWARE = [
@@ -102,7 +104,7 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-AUTH_USER_MODEL = 'SoftDesk_Support.CustomUser'
+AUTH_USER_MODEL = 'authentication.CustomUser'
 
 
 # Internationalization
