@@ -1,4 +1,5 @@
 from rest_framework import viewsets
+from rest_framework import permissions
 from .models import CustomUser
 from .serializers import (
     CustomUserListSerializer,
@@ -8,7 +9,7 @@ from .serializers import (
 )
 from .permissions import (
     IsAdmin,
-    IsAdminAuthenticated,
+    IsUser,
     AllowAnonymousAccess
 )
 
@@ -16,37 +17,25 @@ from .permissions import (
 class CustomUserViewSet(viewsets.ModelViewSet):
     queryset = CustomUser.objects.all()
 
-    serializer_mapping = {
-        "list": CustomUserListSerializer,
-        "retrieve": CustomUserDetailSerializer,
-        "create": CustomUserCreateSerializer,
-        "update": CustomUserUpdateSerializer,
-        "partial_update": CustomUserUpdateSerializer,
-    }
-
     def get_serializer_class(self):
-        """
-        Retourne la liste des permissions nécessaires pour chaque action de la vue.
-        """
-        return self.serializer_mapping.get(self.action, self.serializer_class)
+        if self.action == 'list':
+            return CustomUserListSerializer
+        elif self.action == 'retrieve':
+            return CustomUserDetailSerializer
+        elif self.action == 'create':
+            return CustomUserCreateSerializer
+        elif self.action == 'update':
+            return CustomUserUpdateSerializer
+        return CustomUserDetailSerializer
 
     def get_permissions(self):
-
-        if self.action == "retrieve":
+        if self.action in ['list']:
             permission_classes = [IsAdmin]
-        elif self.action in [
-            "list",
-            "update",
-            "partial_update",
-            "destroy",
-        ]:
-            permission_classes = [IsAdminAuthenticated]
-        elif self.action == "create":
-            permission_classes = [AllowAnonymousAccess]
+        elif self.action in ['create']:
+            permission_classes = [permissions.IsAuthenticated]
+        elif self.action in ['retrieve', 'update', 'partial_update', 'destroy']:
+            permission_classes = [IsUser]
         else:
-            permission_classes = []
+            permission_classes = [AllowAnonymousAccess]
 
         return [permission() for permission in permission_classes]
-
-    def get_queryset(self):
-        return CustomUser.objects.all().order_by("id")
