@@ -93,6 +93,7 @@ class IssueCreateSerializer(ModelSerializer):
             "tag",
             "status",
             "priority",
+            "active"
         ]
 
 
@@ -111,7 +112,7 @@ class IssueListSerializer(ModelSerializer):
             'tag',
             'status',
             'assigned_to',
-            'created_time'
+            'created_time',
         ]
 
 
@@ -131,7 +132,8 @@ class IssueDetailSerializer(ModelSerializer):
             'tag',
             'status',
             'assigned_to',
-            'created_time'
+            'created_time',
+            'active'
         ]
 
     def get_articles(self, instance):
@@ -151,7 +153,8 @@ class CommentCreateSerializer(ModelSerializer):
             'author',
             'name',
             'description',
-            'issue_id'
+            'issue_id',
+            'active'
         ]
 
 
@@ -180,7 +183,8 @@ class CommentDetailSerializer(ModelSerializer):
             'author',
             'name',
             'description',
-            'issue_id'
+            'issue_id',
+            'active'
         ]
 
     def get_products(self, instance):

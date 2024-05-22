@@ -31,6 +31,8 @@ class Project(models.Model):
         help_text='Project contributors'
     )
 
+    active = models.BooleanField(default=True)
+
 
 class Contributor(models.Model):
     """Model representing a contributor."""
@@ -131,6 +133,8 @@ class Issue(models.Model):
         verbose_name="created time"
     )
 
+    active = models.BooleanField(default=True)
+
     def __str__(self):
         return f"{self.title} ({self.get_status_display()})"
 
@@ -172,6 +176,8 @@ class Comment(models.Model):
         verbose_name=("related issue"),
         help_text="Issue associated with comment",
     )
+
+    active = models.BooleanField(default=True)
 
     def __str__(self):
         return f"{self.name} | {self.issue}"

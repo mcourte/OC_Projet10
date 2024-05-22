@@ -18,18 +18,32 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 from rest_framework import routers
-
+from rest_framework_nested import routers as nested_routers
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from authentication.views import CustomUserViewSet
+from project.views import ProjectViewSet, IssueViewSet, CommentViewSet, ContributorViewSet
 
-# Ici nous créons notre routeur
-router = routers.SimpleRouter()
-# Puis lui déclarons une url basée sur le mot clé ‘user’ et notre view
-# afin que l’url générée soit celle que nous souhaitons ‘/api/user/’
-router.register('user', CustomUserViewSet, basename='user')
+
+# Routeur principal : Gère les routes pour les projets et les utilisateurs.
+router = routers.DefaultRouter()
+router.register('api/projects', ProjectViewSet, basename='project')
+router.register('api/user', CustomUserViewSet, basename='user')
+
+# Routeur imbriqué pour les projets : Gère les contributeurs et les issues pour un projet spécifique.
+project_router = nested_routers.NestedSimpleRouter(router, 'api/projects', lookup='project')
+project_router.register('contributors', ContributorViewSet, basename='project-contributors')
+project_router.register('issues', IssueViewSet, basename='project-issues')
+
+# Routeur imbriqué pour les issues :  Gère les commentaires pour une issue spécifique.
+issue_router = nested_routers.NestedSimpleRouter(project_router, 'issues', lookup='issue')
+issue_router.register('comments', CommentViewSet, basename='issue-comments')
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api-auth/', include('rest_framework.urls')),
-    # Il faut bien penser à ajouter les urls du router dans la liste des urls disponibles.
-    path('api/', include(router.urls))
+    path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    path('api/', include(router.urls)),
+    path('api/', include(project_router.urls)),
+    path('api/', include(issue_router.urls)),
 ]

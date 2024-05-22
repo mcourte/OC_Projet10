@@ -1,5 +1,6 @@
 from rest_framework import viewsets
 from .models import Project, Issue, Comment
+from project.SerializerMixin import SerializerMixin
 from serializers import (
         ProjectCreateSerializer,
         ProjectListSerializer,
@@ -25,7 +26,7 @@ from .permissions import (
 )
 
 
-class ProjectViewset(viewsets.ModelViewSet):
+class ProjectViewSet(viewsets.ModelViewSet, SerializerMixin):
     """
     Permet de gérer les opérations CRUD sur le modèle Projet.
 
@@ -94,7 +95,7 @@ class ContributorViewSet(viewsets.ModelViewSet):
         return [permission() for permission in permission_classes]
 
 
-class IssueViewset(viewsets.ModelViewSet):
+class IssueViewSet(viewsets.ModelViewSet, SerializerMixin):
     """
     Permet de gérer les opérations CRUD sur le modèle Issue.
 
@@ -130,6 +131,8 @@ class IssueViewset(viewsets.ModelViewSet):
             permission_classes = [AllowAnonymousAccess]
         elif self.action in ["list", "retrieve"]:
             permission_classes = [IsProjectContributorOrAuthor]
+        elif self.action in ["activate", "deactivate"]:
+            permission_classes = [IsProjectAuthor]
         elif self.action in ["create", "update", "partial_update", "destroy"]:
             permission_classes = [IsIssueAuthor]
         else:
@@ -138,7 +141,7 @@ class IssueViewset(viewsets.ModelViewSet):
         return [permission() for permission in permission_classes]
 
 
-class CommentViewset(viewsets.ModelViewSet):
+class CommentViewSet(viewsets.ModelViewSet, SerializerMixin):
     """
     Permet de gérer les opérations CRUD sur le modèle Comment.
 
@@ -174,6 +177,8 @@ class CommentViewset(viewsets.ModelViewSet):
             permission_classes = [AllowAnonymousAccess]
         elif self.action in ["list", "retrieve"]:
             permission_classes = [IsIssueContributor]
+        elif self.action in ["activate", "deactivate"]:
+            permission_classes = [IsProjectAuthor, IsIssueAuthor]
         elif self.action in ["create", "update", "partial_update", "destroy"]:
             permission_classes = [IsCommentAuthor]
         else:

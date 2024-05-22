@@ -15,7 +15,21 @@ from .permissions import (
 
 
 class CustomUserViewSet(viewsets.ModelViewSet):
-    queryset = CustomUser.objects.all()
+    """
+    Permet de gérer les opérations CRUD sur le modèle CustomUser.
+
+    Create : Créer un CustomUser.
+    Read : Visualiser un CustomUser.
+    Update : Modifier un CustomUser.
+    Delete : Supprimer un CustomUser.
+    """
+
+    def get_queryset(self):
+        queryset = CustomUser.objects.all()
+        is_active = self.request.query_params.get('is_active')
+        if is_active is not None:
+            queryset = queryset.filter(is_active=is_active.lower() == 'true')
+        return queryset
 
     def get_serializer_class(self):
         if self.action == 'list':
