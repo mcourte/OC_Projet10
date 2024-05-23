@@ -30,6 +30,18 @@ class CustomUserViewSet(viewsets.ModelViewSet):
         if is_active is not None:
             queryset = queryset.filter(is_active=is_active.lower() == 'true')
         return queryset
+    
+    def get_permissions(self):
+        if self.action in ['list']:
+            permission_classes = [IsAdmin]
+        elif self.action in ['create']:
+            permission_classes = [permissions.IsAuthenticated]
+        elif self.action in ['retrieve', 'update', 'partial_update', 'destroy']:
+            permission_classes = [IsUser]
+        else:
+            permission_classes = [AllowAnonymousAccess]
+
+        return [permission() for permission in permission_classes]
 
     def get_serializer_class(self):
         if self.action == 'list':
@@ -42,14 +54,4 @@ class CustomUserViewSet(viewsets.ModelViewSet):
             return CustomUserUpdateSerializer
         return CustomUserDetailSerializer
 
-    def get_permissions(self):
-        if self.action in ['list']:
-            permission_classes = [IsAdmin]
-        elif self.action in ['create']:
-            permission_classes = [permissions.IsAuthenticated]
-        elif self.action in ['retrieve', 'update', 'partial_update', 'destroy']:
-            permission_classes = [IsUser]
-        else:
-            permission_classes = [AllowAnonymousAccess]
 
-        return [permission() for permission in permission_classes]
