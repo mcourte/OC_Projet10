@@ -2,87 +2,54 @@ from rest_framework import permissions
 from project.models import Project, Issue, Comment
 
 
-class IsProjectContributorOrAuthor(permissions.BasePermission):
+class IsAuthor(permissions.BasePermission):
     """
-    Permission pour permettre uniquement aux contributeurs d'un projet ou à l'auteur d'y accéder.
-    """
-
-    def has_object_permission(self, request, view, obj):
-        if isinstance(obj, Project):
-            return request.user in obj.contributors.all() or request.user == obj.author
-        return False
-
-
-class IsProjectAuthor(permissions.BasePermission):
-    """
-    Permission pour permettre uniquement à l'auteur d'un projet de le modifier ou de le supprimer.
+    Vérifie si l'utilisateur est l'auteur du projet, du problème ou du commentaire.
     """
 
     def has_object_permission(self, request, view, obj):
         if isinstance(obj, Project):
             return request.user == obj.author
+        elif isinstance(obj, Issue):
+            return request.user == obj.author
+        elif isinstance(obj, Comment):
+            return request.user == obj.author
         return False
 
 
-class IsProjectContributor(permissions.BasePermission):
+class IsContributor(permissions.BasePermission):
     """
-    Permission pour permettre uniquement aux contributeurs d'un projet d'accéder aux fonctionnalités spécifiques.
+    Vérifie si l'utilisateur est un contributeur du projet ou l'auteur du projet du problème ou du commentaire.
     """
 
     def has_object_permission(self, request, view, obj):
         if isinstance(obj, Project):
-            return request.user in obj.contributors.all()
-        return False
-
-
-class IsIssueAuthor(permissions.BasePermission):
-    """
-    Vérifie si l'utilisateur est l'auteur de l'issue.
-    """
-
-    def has_object_permission(self, request, view, obj):
-        if isinstance(obj, Issue):
             return request.user == obj.author
+        elif isinstance(obj, Issue):
+            return self._is_contributor_or_author(request.user, obj.project)
+        elif isinstance(obj, Comment):
+            return self._is_contributor_or_author(request.user, obj.issue.project)
         return False
 
-
-class IsIssueContributor(permissions.BasePermission):
-    """
-    Vérifie si l'utilisateur est un contributeur du projet de l'issue.
-    """
-
-    def has_object_permission(self, request, view, obj):
-        if isinstance(obj, Issue):
-            return request.user in obj.project.contributors.all() or request.user == obj.project.author
-        return False
-
-
-class IsCommentAuthor(permissions.BasePermission):
-    """
-    Vérifie si l'utilisateur est l'auteur du commentaire.
-    """
-
-    def has_object_permission(self, request, view, obj):
-        if isinstance(obj, Comment):
-            return request.user == obj.author
-        return False
-
-
-class IsCommentContributor(permissions.BasePermission):
-    """
-    Vérifie si l'utilisateur est un contributeur du projet du commentaire.
-    """
-
-    def has_object_permission(self, request, view, obj):
-        if isinstance(obj, Comment):
-            return request.user in obj.issue.project.contributors.all() or request.user == obj.issue.project.author
-        return False
+    def _is_contributor_or_author(self, user, project):
+        return user == project.author or user in project.contributors.all()
 
 
 class AllowAnonymousAccess(permissions.BasePermission):
     """
-    Permission pour refuser l'accès aux utilisateurs anonymes.
+    Permission pour refuser l'accès aux utilisateurs non authentifiés.
     """
 
     def has_permission(self, request, view):
         return request.user.is_authenticated
+
+
+class IsAuthenticated(permissions.BasePermission):
+    """
+    Permission pour permettre un accès limité aux utilisateurs authentifiés qui ne sont ni auteurs ni contributeurs.
+    """
+
+    def has_object_permission(self, request, view, obj):
+        # Ici, vous pouvez définir les permissions d'accès limité
+        # Par exemple, permettre uniquement la lecture des commentaires
+        return request.method in permissions.SAFE_METHODS
