@@ -42,8 +42,8 @@ INSTALLED_APPS = [
     "SoftDesk_Support",
     "authentication",
     "project",
-    "rest_framework_simplejwt",
-    "rest_framework_nested"
+    "rest_framework_nested",
+    "rest_framework_simplejwt"
 ]
 
 
