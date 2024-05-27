@@ -12,7 +12,6 @@ class CustomUserAdmin(admin.ModelAdmin):
         "date_of_birth",
         "can_be_contacted",
         "can_data_be_shared",
-        "created_time",
     )
 
 

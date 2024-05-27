@@ -3,7 +3,7 @@ from rest_framework import viewsets, status
 from .models import Project, Issue, Comment
 from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError
-from serializers import (
+from .serializers import (
         ProjectSerializer,
         ProjectListSerializer,
         ContributorSerializer,
