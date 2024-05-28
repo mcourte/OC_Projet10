@@ -12,6 +12,13 @@ class Project(models.Model):
         ('Android', 'Android'),
     ]
 
+    project_id = models.UUIDField(
+        default=uuid.uuid4,
+        editable=False,
+        unique=True,
+        verbose_name="project ID",
+        help_text="Unique ID of the project"
+    )
     name = models.CharField(max_length=255, help_text='Name of project')
     project_type = models.CharField(max_length=10, choices=PROJECT_TYPES, help_text='Type of project')
     description = models.TextField(blank=False, help_text='Description of the project')
@@ -30,6 +37,9 @@ class Project(models.Model):
         related_name='contributions',
         help_text='Project contributors'
     )
+
+    def __str__(self):
+        return self.name
 
 
 class Contributor(models.Model):
@@ -74,9 +84,12 @@ class Issue(models.Model):
         help_text="Issue author"
     )
 
-    project_id = models.UUIDField(
-        verbose_name="project ID",
-        help_text="ID of the project to which the issue belongs"
+    project = models.ForeignKey(
+        Project,
+        on_delete=models.CASCADE,
+        related_name="issues",
+        verbose_name="related project",
+        help_text="Project to which the issue belongs"
     )
 
     issue_id = models.UUIDField(

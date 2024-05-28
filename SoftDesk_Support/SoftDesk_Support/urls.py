@@ -14,13 +14,15 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
-
+from django.conf import settings
 from django.contrib import admin
 from django.urls import path, include
 from rest_framework import routers
-from rest_framework_nested import routers as nested_routers
-from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from authentication.views import CustomUserViewSet
+from rest_framework_simplejwt.views import (
+    TokenObtainPairView,
+    TokenRefreshView,
+)
 from project.views import ProjectViewSet, IssueViewSet, CommentViewSet, ContributorViewSet
 
 
@@ -30,12 +32,12 @@ router.register('api/projects', ProjectViewSet, basename='project')
 router.register('api/user', CustomUserViewSet, basename='user')
 
 # Routeur imbriqué pour les projets : Gère les contributeurs et les issues pour un projet spécifique.
-project_router = nested_routers.NestedSimpleRouter(router, 'api/projects', lookup='project')
+project_router = routers.NestedSimpleRouter(router, 'api/projects', lookup='project')
 project_router.register('contributors', ContributorViewSet, basename='project-contributors')
 project_router.register('issues', IssueViewSet, basename='project-issues')
 
 # Routeur imbriqué pour les issues :  Gère les commentaires pour une issue spécifique.
-issue_router = nested_routers.NestedSimpleRouter(project_router, 'issues', lookup='issue')
+issue_router = routers.NestedSimpleRouter(project_router, 'issues', lookup='issue')
 issue_router.register('comments', CommentViewSet, basename='issue-comments')
 
 urlpatterns = [
