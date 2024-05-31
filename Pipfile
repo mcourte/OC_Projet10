@@ -4,6 +4,7 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
+<<<<<<< HEAD
 asgiref = "*"
 django = "*"
 djangorestframework = "*"
@@ -11,6 +12,18 @@ sqlparse = "*"
 tzdata = "*"
 djangorestframework-simplejwt = "*"
 drf-nested-routers = "*"
+=======
+asgiref = "==3.8.1"
+django = "==5.0.6"
+django-cors-headers = "==4.3.1"
+djangorestframework = "==3.15.1"
+djangorestframework-simplejwt = "==5.3.1"
+drf-nested-routers = "==0.94.1"
+pyjwt = "==2.8.0"
+sqlparse = "==0.5.0"
+typing = "==3.7.4.3"
+typing-extensions = "==4.11.0"
+>>>>>>> new-branch
 
 [dev-packages]
 
