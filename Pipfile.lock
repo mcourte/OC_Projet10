@@ -1,12 +1,11 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "1f3fedbb9723bae9e6375279f4ab42338cce702a904ea9648178ec137c303b23"
+            "sha256": "c3d8e55c8533dc8ff3be6c4de0ca6b41d70e2bd50e2fbefb7e1e15badc377c81"
         },
         "pipfile-spec": 6,
         "requires": {
-            "python_full_version": "3.10.12",
-            "python_version": "3.10"
+            "python_version": "3.12"
         },
         "sources": [
             {
@@ -79,15 +78,6 @@
             "index": "pypi",
             "markers": "python_version >= '3.7'",
             "version": "==2.8.0"
-        },
-        "rest-framework-simplejwt": {
-            "hashes": [
-                "sha256:035187ce5380e18e8b966610a89b6460fb4b73cd179979343888fb190328125d",
-                "sha256:620c56826ff4791c4aaa730ec52aed1f4c74b9c20ea15b9fc1a39bdf99a29a30"
-            ],
-            "index": "pypi",
-            "markers": "python_version >= '3.0'",
-            "version": "==0.0.2"
         },
         "sqlparse": {
             "hashes": [
