@@ -41,17 +41,20 @@ class ProjectSerializer(ModelSerializer):
 
 class IssueSerializer(ModelSerializer):
     """Serializer pour créer une ISSUE."""
+    project_id = serializers.UUIDField(write_only=True)
 
     class Meta:
         model = Issue
         fields = [
-            "id",
-            "assigned_to",
-            "title",
-            "description",
-            "tag",
-            "status",
-            "priority",
+            'issue_id',
+            'title',
+            'description',
+            'priority',
+            'tag',
+            'status',
+            'assigned_to',
+            'created_time',
+            'project_id',
         ]
 
 

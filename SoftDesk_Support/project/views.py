@@ -1,3 +1,4 @@
+from rest_framework.exceptions import PermissionDenied
 from django.shortcuts import get_object_or_404
 from rest_framework import viewsets, status
 from .models import Project, Issue, Comment
@@ -33,7 +34,22 @@ class HomeView(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
 
-class ProjectViewSet(viewsets.ModelViewSet):
+class ProjectListViewSet(viewsets.ModelViewSet):
+    """
+
+    """
+
+    permission_classes = [IsAuthenticated, IsAuthor, IsContributor]
+
+    def get_serializer_class(self):
+        """
+        Retourne le sérialiseur approprié pour chaque action de la vue.
+        """
+        if self.action == 'list':
+            return ProjectListSerializer
+
+
+class ProjectDetailViewSet(viewsets.ModelViewSet):
     """
     Permet de gérer les opérations CRUD sur le modèle Projet.
 
@@ -49,8 +65,6 @@ class ProjectViewSet(viewsets.ModelViewSet):
         """
         Retourne le sérialiseur approprié pour chaque action de la vue.
         """
-        if self.action == 'list':
-            return ProjectListSerializer
         return ProjectSerializer
 
     def get_queryset(self):
@@ -200,12 +214,15 @@ class IssueViewSet(viewsets.ModelViewSet):
         return self._issue
 
     def perform_create(self, serializer):
-        """
-        Crée une nouvelle Issue et l'associe à l'utilisateur connecté.
-        """
+        project_id = self.request.data.get('project')
+        project = get_object_or_404(Project, id=project_id)
+
+        if not project.contributors.filter(id=self.request.user.id).exists():
+            raise PermissionDenied("Vous n'êtes pas autorisé à créer des problèmes pour ce projet.")
+
         serializer.save(author=self.request.user)
         return Response(
-            {"message": "Le projet a été créé avec succès."},
+            {"message": "Le problème a été créé avec succès."},
             status=status.HTTP_201_CREATED
         )
 

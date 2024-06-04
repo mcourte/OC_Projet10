@@ -13,17 +13,24 @@ class Project(models.Model):
     ]
 
     project_id = models.UUIDField(
+        primary_key=True,
         default=uuid.uuid4,
         editable=False,
         unique=True,
         verbose_name="project ID",
         help_text="Unique ID of the project"
     )
+
     name = models.CharField(max_length=255, help_text='Name of project')
+
     project_type = models.CharField(max_length=10, choices=PROJECT_TYPES, help_text='Type of project')
+
     description = models.TextField(blank=False, help_text='Description of the project')
+
     created_time = models.DateTimeField(auto_now_add=True, verbose_name='created time')
+
     updated_time = models.DateTimeField(auto_now=True, verbose_name='updated date')
+
     contributor_owner = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
@@ -31,6 +38,7 @@ class Project(models.Model):
         null=True,
         blank=True
     )
+
     contributors = models.ManyToManyField(
         to=settings.AUTH_USER_MODEL,
         through='Contributor',
@@ -89,7 +97,9 @@ class Issue(models.Model):
         on_delete=models.CASCADE,
         related_name="issues",
         verbose_name="related project",
-        help_text="Project to which the issue belongs"
+        help_text="Project to which the issue belongs",
+        null=False,
+        blank=False
     )
 
     issue_id = models.UUIDField(

@@ -30,7 +30,7 @@ class CustomUserViewSet(viewsets.ModelViewSet):
         if is_active is not None:
             queryset = queryset.filter(is_active=is_active.lower() == 'true')
         return queryset
-    
+
     def get_permissions(self):
         if self.action in ['list']:
             permission_classes = [IsAdmin]
@@ -53,5 +53,3 @@ class CustomUserViewSet(viewsets.ModelViewSet):
         elif self.action == 'update':
             return CustomUserUpdateSerializer
         return CustomUserDetailSerializer
-
-
