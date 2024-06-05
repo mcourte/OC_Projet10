@@ -15,6 +15,7 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 
+from django.conf import settings
 from django.contrib import admin
 from django.urls import path, include
 from django.http import HttpResponseRedirect
@@ -22,7 +23,6 @@ from rest_framework_nested import routers
 from authentication.views import CustomUserViewSet
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from project.views import ProjectDetailViewSet, IssueViewSet, CommentViewSet, ContributorViewSet
-from django.conf import settings
 
 # Main router
 router = routers.DefaultRouter()
@@ -48,11 +48,11 @@ urlpatterns = [
     path('api/', include(issue_router.urls)),
 ]
 
-
-# Rediriger la racine vers l'API
+# Redirect root to the API
 urlpatterns += [
     path('', lambda request: HttpResponseRedirect('api/')),
 ]
 
+# Debug URL for browsable API login
 if settings.DEBUG:
     urlpatterns.append(path('api-auth/', include('rest_framework.urls')))
