@@ -2,7 +2,7 @@ from rest_framework import permissions
 from project.models import Project, Issue, Comment
 
 
-class IsAuthorOrContributorOrAuthenticated(permissions.BasePermission):
+class IsAuthorOrContributor(permissions.BasePermission):
     """
     Permission personnalisée pour permettre l'accès si l'utilisateur est soit l'auteur,
     soit un contributeur, soit authentifié avec certaines restrictions.
@@ -27,12 +27,6 @@ class IsAuthorOrContributorOrAuthenticated(permissions.BasePermission):
         project = self._get_project_from_obj(obj)
         if project and request.user in project.contributors.all():
             # Les contributeurs peuvent effectuer les opérations GET et POST
-            if request.method in permissions.SAFE_METHODS + ['POST']:
-                return True
-
-        # Vérifiez si l'utilisateur est authentifié
-        if request.user.is_authenticated:
-            # Les utilisateurs authentifiés peuvent effectuer les opérations GET et POST
             if request.method in permissions.SAFE_METHODS + ['POST']:
                 return True
 

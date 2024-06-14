@@ -12,7 +12,7 @@ from .serializers import (
         CommentSerializer,
     )
 from .permissions import (
-    IsAuthorOrContributorOrAuthenticated,
+    IsAuthorOrContributor,
     IsAuthenticated
 )
 from authentication.permissions import AllowAnonymousAccess
@@ -35,7 +35,7 @@ class HomeView(viewsets.ModelViewSet):
 
 class ProjectListViewSet(viewsets.ModelViewSet):
 
-    permission_classes = [IsAuthorOrContributorOrAuthenticated]
+    permission_classes = [IsAuthorOrContributor]
 
     def get_serializer_class(self):
         """
@@ -61,7 +61,7 @@ class ProjectDetailViewSet(viewsets.ModelViewSet):
     Delete : Supprimer un projet.
     """
 
-    permission_classes = [IsAuthorOrContributorOrAuthenticated]
+    permission_classes = [IsAuthorOrContributor | IsAuthenticated]
 
     def get_serializer_class(self):
         """
@@ -122,7 +122,7 @@ class ContributorViewSet(viewsets.ModelViewSet):
     """
 
     serializer_class = ContributorSerializer
-    permission_classes = [IsAuthorOrContributorOrAuthenticated]
+    permission_classes = [IsAuthorOrContributor]
 
     @property
     def project(self):
@@ -191,7 +191,7 @@ class IssueViewSet(viewsets.ModelViewSet):
     """
 
     serializer_class = IssueSerializer
-    permission_classes = [IsAuthorOrContributorOrAuthenticated]
+    permission_classes = [IsAuthorOrContributor]
 
     def get_queryset(self):
         """
@@ -265,7 +265,7 @@ class CommentViewSet(viewsets.ModelViewSet):
     """
 
     serializer_class = CommentSerializer
-    permission_classes = [IsAuthorOrContributorOrAuthenticated]
+    permission_classes = [IsAuthorOrContributor]
 
     def get_queryset(self):
         """
