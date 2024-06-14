@@ -2,6 +2,16 @@ from django.db import models
 import uuid
 from django.conf import settings
 from authentication.models import CustomUser
+from django.contrib.auth import get_user_model
+from django.core.exceptions import ObjectDoesNotExist
+
+
+def get_admin_user():
+    User = get_user_model()
+    try:
+        return User.objects.filter(is_superuser=True).first()
+    except ObjectDoesNotExist:
+        return None
 
 
 class Project(models.Model):
@@ -33,7 +43,7 @@ class Project(models.Model):
 
     contributor_owner = models.ForeignKey(
         settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
+        on_delete=models.SET(get_admin_user),
         related_name='owned_projects',
         null=True,
         blank=True
@@ -86,7 +96,7 @@ class Issue(models.Model):
 
     author = models.ForeignKey(
         to=settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
+        on_delete=models.SET(get_admin_user),
         related_name="issue_authors",
         verbose_name="issue author",
         help_text="Issue author"
@@ -142,7 +152,7 @@ class Issue(models.Model):
 
     assigned_to = models.ForeignKey(
         to=settings.AUTH_USER_MODEL,
-        on_delete=models.SET_NULL,
+        on_delete=models.SET(get_admin_user),
         null=True,
         blank=True,
         related_name="assigned_issues",
@@ -172,7 +182,7 @@ class Comment(models.Model):
 
     author = models.ForeignKey(
         settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
+        on_delete=models.SET(get_admin_user),
         related_name="comment_authors"
     )
 

@@ -2,32 +2,41 @@ from rest_framework import permissions
 from project.models import Project, Issue, Comment
 
 
-class IsAuthor(permissions.BasePermission):
+class IsAuthorOrContributorOrAuthenticated(permissions.BasePermission):
     """
-    Vérifie si l'utilisateur est l'auteur du projet, du problème ou du commentaire.
+    Permission personnalisée pour permettre l'accès si l'utilisateur est soit l'auteur,
+    soit un contributeur, soit authentifié avec certaines restrictions.
     """
-
-    def has_object_permission(self, request, view, obj):
-        return request.user == obj.author
-
-
-class IsContributor(permissions.BasePermission):
-    """
-    Vérifie si l'utilisateur est un contributeur du projet ou l'auteur du projet du problème ou du commentaire.
-    """
-
-    def has_object_permission(self, request, view, obj):
-        project = self._get_project_from_obj(Project)
-        return project and (request.user == project.author or request.user in project.contributors.all())
 
     def _get_project_from_obj(self, obj):
+        # Implémentez cette méthode pour extraire le projet de l'objet.
         if isinstance(obj, Project):
             return obj
-        if isinstance(obj, Issue):
+        elif isinstance(obj, Issue):
             return obj.project
-        if isinstance(obj, Comment):
+        elif isinstance(obj, Comment):
             return obj.issue.project
         return None
+
+    def has_object_permission(self, request, view, obj):
+        # Vérifiez si l'utilisateur est l'auteur
+        if request.user == obj.author:
+            return True
+
+        # Vérifiez si l'utilisateur est un contributeur
+        project = self._get_project_from_obj(obj)
+        if project and request.user in project.contributors.all():
+            # Les contributeurs peuvent effectuer les opérations GET et POST
+            if request.method in permissions.SAFE_METHODS + ['POST']:
+                return True
+
+        # Vérifiez si l'utilisateur est authentifié
+        if request.user.is_authenticated:
+            # Les utilisateurs authentifiés peuvent effectuer les opérations GET et POST
+            if request.method in permissions.SAFE_METHODS + ['POST']:
+                return True
+
+        return False
 
 
 class IsAuthenticated(permissions.BasePermission):

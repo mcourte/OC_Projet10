@@ -7,15 +7,15 @@ from authentication.serializers import CustomUserAuthorContributorSerializer
 class ProjectListSerializer(ModelSerializer):
     """Serializer pour lister les PROJECT."""
 
-    author = CustomUserAuthorContributorSerializer(many=False)
+    contributor_owner = CustomUserAuthorContributorSerializer(many=False)
     contributors = CustomUserAuthorContributorSerializer(many=True)
 
     class Meta:
         model = Project
         fields = [
-            "id",
+            "project_id",
             "name",
-            "author",
+            "contributor_owner",
             "contributors",
         ]
 
@@ -23,18 +23,18 @@ class ProjectListSerializer(ModelSerializer):
 class ProjectSerializer(ModelSerializer):
     """Serializer pour afficher des informations détaillées sur un PROJECT."""
 
-    author = CustomUserAuthorContributorSerializer(many=False)
+    contributor_owner = CustomUserAuthorContributorSerializer(many=False)
     contributors = CustomUserAuthorContributorSerializer(many=True)
 
     class Meta:
         model = Project
         fields = [
-            "id",
+            "project_id",
             "created_time",
             "name",
             "description",
             "project_type",
-            "author",
+            "contributor_owner",
             "contributors",
         ]
 
@@ -48,6 +48,7 @@ class IssueSerializer(ModelSerializer):
         fields = [
             'issue_id',
             'title',
+            'author',
             'description',
             'priority',
             'tag',

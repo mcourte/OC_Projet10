@@ -19,38 +19,37 @@ from django.conf import settings
 from django.contrib import admin
 from django.urls import path, include
 from django.http import HttpResponseRedirect
-from rest_framework_nested import routers
-from authentication.views import CustomUserViewSet
-from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
-from project.views import ProjectDetailViewSet, IssueViewSet, CommentViewSet, ContributorViewSet
-
-# Main router
-router = routers.DefaultRouter()
-router.register('projects', ProjectDetailViewSet, basename='project')
-router.register('user', CustomUserViewSet, basename='user')
-
-# Nested routers for project-related paths
-project_router = routers.NestedSimpleRouter(router, 'projects', lookup='project')
-project_router.register('contributors', ContributorViewSet, basename='project-contributors')
-project_router.register('issues', IssueViewSet, basename='project-issues')
-
-# Nested router for issue-related paths within projects
-issue_router = routers.NestedSimpleRouter(project_router, 'issues', lookup='issue')
-issue_router.register('comments', CommentViewSet, basename='issue-comments')
+from rest_framework_simplejwt.views import TokenRefreshView
+from authentication.views import CustomUserViewSet, CustomTokenObtainPairView
+from project.views import (
+    ProjectDetailViewSet,
+    ProjectListViewSet,
+    IssueViewSet,
+    CommentViewSet,
+    ContributorViewSet,
+)
 
 # URL patterns
 urlpatterns = [
-    path('admin/', admin.site.urls),
-    path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('admin/', admin.site.urls, name="admin"),
+    path('api/token/', CustomTokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
-    path('api/', include(router.urls)),
-    path('api/', include(project_router.urls)),
-    path('api/', include(issue_router.urls)),
+    path('api-auth/', include('authentication.urls')),
+    path('users/', CustomUserViewSet.as_view({'get': 'list'}), name='user'),
+    path('projects/', ProjectListViewSet.as_view({'get': 'list'}), name='projects'),
+    path('projects/<int:project_id>/', ProjectDetailViewSet.as_view({'get': 'retrieve'}), name='project'),
+    path('projects/<int:project_id>/contributors/', ContributorViewSet.as_view({'get': 'list'}), name='contributors'),
+    path('projects/<int:project_id>/issues/', IssueViewSet.as_view({'get': 'list'}), name='issues'),
+    path('projects/<int:project_id>/issues/<int:issue_id>/', IssueViewSet.as_view({'get': 'retrieve'}), name='issue'),
+    path('projects/<int:project_id>/issues/<int:issue_id>/comments/', CommentViewSet.as_view({'get': 'list'}),
+         name='comments'),
+    path('projects/<int:project_id>/issues/<int:issue_id>/comments/<int:comment_id>/',
+         CommentViewSet.as_view({'get': 'retrieve'}), name='comment'),
 ]
 
-# Redirect root to the API
+# Redirect root to the API login
 urlpatterns += [
-    path('', lambda request: HttpResponseRedirect('api/')),
+    path('', lambda request: HttpResponseRedirect('/api-auth/login/'), name='root_redirect'),
 ]
 
 # Debug URL for browsable API login

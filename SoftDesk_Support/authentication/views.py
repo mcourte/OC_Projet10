@@ -12,6 +12,18 @@ from .permissions import (
     IsUser,
     AllowAnonymousAccess
 )
+from rest_framework_simplejwt.views import TokenObtainPairView
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+
+
+class CustomTokenObtainPairView(TokenObtainPairView):
+    serializer_class = TokenObtainPairSerializer
+
+    def post(self, request, *args, **kwargs):
+        response = super().post(request, *args, **kwargs)
+        if response.status_code == 200:
+            response.data['next'] = '/projects/'
+        return response
 
 
 class CustomUserViewSet(viewsets.ModelViewSet):
@@ -32,15 +44,14 @@ class CustomUserViewSet(viewsets.ModelViewSet):
         return queryset
 
     def get_permissions(self):
-        if self.action in ['list']:
+        if self.action == 'list':
             permission_classes = [IsAdmin]
-        elif self.action in ['create']:
+        elif self.action == 'create':
             permission_classes = [permissions.IsAuthenticated]
         elif self.action in ['retrieve', 'update', 'partial_update', 'destroy']:
             permission_classes = [IsUser]
         else:
             permission_classes = [AllowAnonymousAccess]
-
         return [permission() for permission in permission_classes]
 
     def get_serializer_class(self):
