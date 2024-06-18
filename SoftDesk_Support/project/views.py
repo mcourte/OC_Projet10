@@ -1,59 +1,109 @@
-from rest_framework.exceptions import PermissionDenied
 from django.shortcuts import get_object_or_404
 from rest_framework import viewsets, status
-from .models import Project, Issue, Comment
 from rest_framework.response import Response
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import ValidationError, PermissionDenied
+from .models import Project, Issue, Comment
 from .serializers import (
-        ProjectSerializer,
-        ProjectListSerializer,
-        ContributorSerializer,
-        IssueSerializer,
-        CommentSerializer,
-    )
-from .permissions import (
-    IsAuthorOrContributor,
-    IsAuthenticated
+    ProjectSerializer,
+    ProjectListSerializer,
+    ContributorSerializer,
+    IssueSerializer,
+    CommentSerializer,
 )
+from authentication.serializers import LoginSerializer, RegisterSerializer
+from rest_framework_simplejwt.tokens import RefreshToken
+from .permissions import IsAuthorOrContributor, IsAuthenticated
 from authentication.permissions import AllowAnonymousAccess
 
 
-class LoginView(viewsets.ModelViewSet):
-    """Permet à toute personne accédant à l'application
-    de se connecter ou de créer un compte.
+class LoginView(viewsets.ViewSet):
     """
-
+    Permet à toute personne accédant à l'application de se connecter ou de créer un compte.
+    """
     permission_classes = [AllowAnonymousAccess]
 
+    def create(self, request, *args, **kwargs):
+        if 'action' in request.data and request.data['action'] == 'login':
+            return self.login(request)
+        elif 'action' in request.data and request.data['action'] == 'register':
+            return self.register(request)
+        else:
+            return Response({'detail': 'Invalid action'}, status=status.HTTP_400_BAD_REQUEST)
 
-class HomeView(viewsets.ModelViewSet):
+    def login(self, request):
+        serializer = LoginSerializer(data=request.data)
+        if serializer.is_valid():
+            user = serializer.validated_data['user']
+            refresh = RefreshToken.for_user(user)
+            return Response({
+                'refresh': str(refresh),
+                'access': str(refresh.access_token),
+            })
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def register(self, request):
+        serializer = RegisterSerializer(data=request.data)
+        if serializer.is_valid():
+            user = serializer.save()
+            refresh = RefreshToken.for_user(user)
+            return Response({
+                'refresh': str(refresh),
+                'access': str(refresh.access_token),
+            }, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class HomeViewSet(viewsets.ModelViewSet):
     """Permet à toute personne identifié, de voir la liste de tous les Projets
     de voir la liste des projets où il est Contributeur, de créer un Projet."""
 
     permission_classes = [IsAuthenticated]
 
+    def get_serializer_class(self):
+        if self.action == 'list':
+            return ProjectListSerializer
+        return ProjectSerializer
+
+    def get_queryset(self):
+        if self.action == 'list':
+            return Project.objects.all()
+        elif self.action == 'projects_as_contributor':
+            return self.request.user.projects_as_contributor.all()
+
+    def get(self, request, *args, **kwargs):
+        if self.action == 'list':
+            return self.list(request, *args, **kwargs)
+        elif self.action == 'projects_as_contributor':
+            queryset = self.get_queryset()
+            serializer = self.get_serializer(queryset, many=True)
+            return Response(serializer.data)
+
+    def post(self, request, *args, **kwargs):
+        return super().create(request, *args, **kwargs)
+
 
 class ProjectListViewSet(viewsets.ModelViewSet):
+    """
+    Permet de gérer les opérations CRUD sur le modèle Project.
+    """
 
     permission_classes = [IsAuthorOrContributor]
 
     def get_serializer_class(self):
-        """
-        Retourne le sérialiseur approprié pour chaque action de la vue.
-        """
         if self.action == 'list':
             return ProjectListSerializer
+        return ProjectSerializer
 
     def get_queryset(self):
-        """
-        Retourne le queryset des projets.
-        """
         return Project.objects.all()
+
+    def post(self, request, *args, **kwargs):
+        return super().create(request, *args, **kwargs)
 
 
 class ProjectDetailViewSet(viewsets.ModelViewSet):
     """
-    Permet de gérer les opérations CRUD sur le modèle Projet.
+    Permet de gérer les opérations CRUD sur le modèle Project.
 
     Create : Créer un projet.
     Read : Visualiser un projet.
@@ -62,53 +112,55 @@ class ProjectDetailViewSet(viewsets.ModelViewSet):
     """
 
     permission_classes = [IsAuthorOrContributor | IsAuthenticated]
+    queryset = Project.objects.all()
+    serializer_class = ProjectSerializer
 
     def get_serializer_class(self):
-        """
-        Retourne le sérialiseur approprié pour chaque action de la vue.
-        """
         return ProjectSerializer
 
     def get_queryset(self):
-        """
-        Retourne le queryset des projets.
-        """
         return Project.objects.all()
 
-    def perform_create(self, serializer):
-        """
-        Crée un nouveau Projet et l'associe à l'utilisateur connecté.
-        """
-        serializer.save(author=self.request.user)
-        return Response(
-            {"message": "Le Projet a été créé avec succès."},
-            status=status.HTTP_201_CREATED
-        )
+    def post(self, request, *args, **kwargs):
+        action = request.data.get('action', 'create')
 
-    def perform_update(self, serializer):
-        """
-        Met à jour un Projet si l'utilisateur connecté est l'auteur.
-        """
-        instance = self.get_object()
-        if self.request.user == instance.author:
-            serializer.save()
-            return Response(
-                {"message": "Le Projet a été modifié avec succès."},
-                status=status.HTTP_200_OK
-            )
-        raise ValidationError("Seul l'auteur du Projet peut le modifier.")
+        if action == 'create':
+            serializer = self.get_serializer(data=request.data)
+            if serializer.is_valid():
+                serializer.save(author=request.user)
+                return Response(
+                    {"message": "Le projet a été créé avec succès."},
+                    status=status.HTTP_201_CREATED
+                )
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    def perform_destroy(self, instance):
-        """
-        Supprime un Projet si l'utilisateur connecté est l'auteur.
-        """
-        if self.request.user == instance.author:
-            instance.delete()
-            return Response(
-                {"message": "Le Projet a été supprimé avec succès."},
-                status=status.HTTP_204_NO_CONTENT,
-            )
-        raise ValidationError("Seul l'auteur du Projet peut le supprimer.")
+        elif action == 'update':
+            instance = self.get_object()
+            if request.user == instance.author:
+                serializer = self.get_serializer(instance, data=request.data, partial=True)
+                if serializer.is_valid():
+                    serializer.save()
+                    return Response(
+                        {"message": "Le projet a été modifié avec succès."},
+                        status=status.HTTP_200_OK
+                    )
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            else:
+                raise ValidationError("Seul l'auteur du Projet peut le modifier.")
+
+        elif action == 'destroy':
+            instance = self.get_object()
+            if request.user == instance.author:
+                instance.delete()
+                return Response(
+                    {"message": "Le projet a été supprimé avec succès."},
+                    status=status.HTTP_204_NO_CONTENT,
+                )
+            else:
+                raise ValidationError("Seul l'auteur du Projet peut le supprimer.")
+
+        else:
+            raise ValidationError("Action non valide.")
 
 
 class ContributorViewSet(viewsets.ModelViewSet):
@@ -124,60 +176,49 @@ class ContributorViewSet(viewsets.ModelViewSet):
     serializer_class = ContributorSerializer
     permission_classes = [IsAuthorOrContributor]
 
-    @property
-    def project(self):
-        """
-        Récupère le projet associé à l'utilisateur connecté en préchargeant les contributeurs.
-        """
-        if not hasattr(self, '_project'):
-            self._project = get_object_or_404(
-                Project.objects.all().prefetch_related("contributors"),
-                pk=self.kwargs["project_pk"],
-            )
-        return self._project
-
     def get_queryset(self):
-        """
-        Retourne le queryset des contributeurs du projet associé, ordonné par date de création.
-        """
         return self.project.contributors.all().order_by("created_time")
 
+    def get_project(self):
+        if not hasattr(self, '_project'):
+            self._project = get_object_or_404(Project.objects.all().prefetch_related("contributors"),
+                                              pk=self.kwargs["project_pk"])
+        return self._project
+
     def get_serializer_class(self):
-        """
-        Retourne la classe de sérialiseur en fonction de l'action.
-        """
         if self.action == "retrieve":
             return ContributorSerializer
 
         return super().get_serializer_class()
 
-    def perform_create(self, serializer):
-        """
-        Ajoute l'utilisateur validé des données du sérialiseur aux contributeurs du projet.
-        """
-        if self.request.user != self.project.author:
-            raise ValidationError("Seul l'auteur du projet peut ajouter des contributeurs.")
-        self.project.contributors.add(serializer.validated_data["user"])
-        return Response(
-            {"message": "Le Contributeur a été ajouté avec succès."},
-            status=status.HTTP_201_CREATED
-        )
+    def post(self, request, *args, **kwargs):
+        action = request.data.get('action', 'create')
 
-    def perform_destroy(self, instance):
-        """
-        Supprimer un Contributor du Project.
-        """
-        if self.request.user == self.project.author:
-            self.project.contributors.remove(instance)
+        if action == 'create':
+            if request.user != self.project.author:
+                raise ValidationError("Seul l'auteur du projet peut ajouter des contributeurs.")
+            serializer = self.get_serializer(data=request.data)
+            if serializer.is_valid():
+                self.project.contributors.add(serializer.validated_data["user"])
+                return Response(
+                    {"message": "Le Contributeur a été ajouté avec succès."},
+                    status=status.HTTP_201_CREATED
+                )
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-            return Response(
-                {"message": "Le Contributeur a été supprimé avec succès."},
-                status=status.HTTP_204_NO_CONTENT,
-            )
+        elif action == 'destroy':
+            if request.user == self.project.author:
+                instance = self.get_object()
+                self.project.contributors.remove(instance)
+                return Response(
+                    {"message": "Le Contributeur a été supprimé avec succès."},
+                    status=status.HTTP_204_NO_CONTENT,
+                )
+            else:
+                raise ValidationError("Seul l'auteur du Projet peut supprimer des Contributeurs.")
+
         else:
-            raise ValidationError(
-                "Seul l'auteur du Projet peuvent supprimer des Contributeurs."
-            )
+            raise ValidationError("Action non valide.")
 
 
 class IssueViewSet(viewsets.ModelViewSet):
@@ -194,64 +235,56 @@ class IssueViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthorOrContributor]
 
     def get_queryset(self):
-        """
-        Retourne le queryset filtré pour les issues actives.
-        """
-        queryset = Issue.objects.filter(active=True)
-        project_id = self.request.GET.get('project_id')
-        if project_id is not None:
-            queryset = queryset.filter(project_id=project_id)
-        return queryset
+        if self.action == 'list':
+            return Issue.objects.filter(project_id=self.kwargs.get('project_pk'), active=True)
+        return Issue.objects.all()
 
-    @property
-    def issue(self):
-        """
-        Récupère les issues liées au projet.
-        """
-        if self._issue is None:
-            self._issue = Issue.objects.filter(
-                project_id=self.kwargs["project_pk"]
-            )
+    def post(self, request, *args, **kwargs):
+        action = request.data.get('action', 'create')
 
-        return self._issue
+        if action == 'create':
+            project_id = request.data.get('project')
+            project = get_object_or_404(Project, id=project_id)
 
-    def perform_create(self, serializer):
-        project_id = self.request.data.get('project')
-        project = get_object_or_404(Project, id=project_id)
+            if not project.contributors.filter(id=request.user.id).exists():
+                raise PermissionDenied("Vous n'êtes pas autorisé à créer des problèmes pour ce projet.")
 
-        if not project.contributors.filter(id=self.request.user.id).exists():
-            raise PermissionDenied("Vous n'êtes pas autorisé à créer des problèmes pour ce projet.")
+            serializer = self.get_serializer(data=request.data)
+            if serializer.is_valid():
+                serializer.save(author=request.user)
+                return Response(
+                    {"message": "Le problème a été créé avec succès."},
+                    status=status.HTTP_201_CREATED
+                )
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        serializer.save(author=self.request.user)
-        return Response(
-            {"message": "Le problème a été créé avec succès."},
-            status=status.HTTP_201_CREATED
-        )
+        elif action == 'update':
+            instance = self.get_object()
+            if request.user == instance.author:
+                serializer = self.get_serializer(instance, data=request.data, partial=True)
+                if serializer.is_valid():
+                    serializer.save()
+                    return Response(
+                        {"message": "L'Issue a été modifiée avec succès."},
+                        status=status.HTTP_200_OK
+                    )
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            else:
+                raise ValidationError("Seul l'auteur de l'issue peut la modifier.")
 
-    def perform_update(self, serializer):
-        """
-        Met à jour une Issue si l'utilisateur connecté est l'auteur.
-        """
-        instance = self.get_object()
-        if self.request.user == instance.author:
-            serializer.save()
-            return Response(
-                {"message": "L'Issue a été modifiée avec succès."},
-                status=status.HTTP_200_OK
-            )
-        raise ValidationError("Seul l'auteur de l'issue peut la modifier.")
+        elif action == 'destroy':
+            instance = self.get_object()
+            if request.user == instance.author:
+                instance.delete()
+                return Response(
+                    {"message": "L'Issue a été supprimée avec succès."},
+                    status=status.HTTP_204_NO_CONTENT,
+                )
+            else:
+                raise ValidationError("Seul l'auteur de l'issue peut la supprimer.")
 
-    def perform_destroy(self, instance):
-        """
-        Supprime une Issue si l'utilisateur connecté est l'auteur.
-        """
-        if self.request.user == instance.author:
-            instance.delete()
-            return Response(
-                {"message": "L'Issue a été supprimé avec succès."},
-                status=status.HTTP_204_NO_CONTENT,
-            )
-        raise ValidationError("Seul l'auteur de l'issue peut la supprimer.")
+        else:
+            raise ValidationError("Action non valide.")
 
 
 class CommentViewSet(viewsets.ModelViewSet):
@@ -268,20 +301,12 @@ class CommentViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthorOrContributor]
 
     def get_queryset(self):
-        """
-        Retourne le queryset filtré pour les commentaires actifs.
-        """
-        queryset = Comment.objects.filter(active=True)
-        issue_id = self.request.GET.get('issue_id')
-        if issue_id is not None:
-            queryset = queryset.filter(issue_id=issue_id)
-        return queryset
+        if self.action == 'list':
+            return Comment.objects.filter(issue_id=self.kwargs.get('issue_pk'))
+        return Comment.objects.all()
 
     @property
     def comment(self):
-        """
-        Récupère les commentaires liés à l'issue spécifiée.
-        """
         if self._comment is None:
             self._comment = Comment.objects.filter(
                 issue_id=self.kwargs["issue_pk"]
@@ -289,37 +314,43 @@ class CommentViewSet(viewsets.ModelViewSet):
 
         return self._comment
 
-    def perform_create(self, serializer):
-        """
-        Crée un nouveau Comment et l'associe à l'utilisateur connecté.
-        """
-        serializer.save(author=self.request.user)
-        return Response(
-            {"message": "Le projet a été créé avec succès."},
-            status=status.HTTP_201_CREATED
-        )
+    def post(self, request, *args, **kwargs):
+        action = request.data.get('action', 'create')
 
-    def perform_update(self, serializer):
-        """
-        Met à jour un Comment si l'utilisateur connecté est l'auteur.
-        """
-        instance = self.get_object()
-        if self.request.user == instance.author:
-            serializer.save()
-            return Response(
-                {"message": "L'issue a été modifiée avec succès."},
-                status=status.HTTP_200_OK
-            )
-        raise ValidationError("Seul l'auteur de l'issue peut la modifier.")
+        if action == 'create':
+            serializer = CommentSerializer(data=request.data)
+            if serializer.is_valid():
+                serializer.save(author=request.user)
+                return Response(
+                    {"message": "Le commentaire a été créé avec succès."},
+                    status=status.HTTP_201_CREATED
+                )
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    def perform_destroy(self, instance):
-        """
-        Supprime un Comment si l'utilisateur connecté est l'auteur.
-        """
-        if self.request.user == instance.author:
-            instance.delete()
-            return Response(
-                {"message": "Le Comment a été supprimé avec succès."},
-                status=status.HTTP_204_NO_CONTENT,
-            )
-        raise ValidationError("Seul l'auteur du Comment peut le supprimer.")
+        elif action == 'update':
+            instance = self.get_object()
+            if request.user == instance.author:
+                serializer = CommentSerializer(instance, data=request.data, partial=True)
+                if serializer.is_valid():
+                    serializer.save()
+                    return Response(
+                        {"message": "Le commentaire a été modifié avec succès."},
+                        status=status.HTTP_200_OK
+                    )
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            else:
+                raise ValidationError("Seul l'auteur du Comment peut le modifier.")
+
+        elif action == 'destroy':
+            instance = self.get_object()
+            if request.user == instance.author:
+                instance.delete()
+                return Response(
+                    {"message": "Le Comment a été supprimé avec succès."},
+                    status=status.HTTP_204_NO_CONTENT,
+                )
+            else:
+                raise ValidationError("Seul l'auteur du Comment peut le supprimer.")
+
+        else:
+            raise ValidationError("Action non valide.")

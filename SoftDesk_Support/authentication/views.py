@@ -1,11 +1,9 @@
-from rest_framework import viewsets
-from rest_framework import permissions
+from rest_framework import generics, permissions, viewsets
 from .models import CustomUser
 from .serializers import (
     CustomUserListSerializer,
-    CustomUserUpdateSerializer,
-    CustomUserCreateSerializer,
-    CustomUserDetailSerializer
+    CustomUserDetailSerializer,
+    RegisterSerializer
 )
 from .permissions import (
     IsAdmin,
@@ -13,16 +11,20 @@ from .permissions import (
     AllowAnonymousAccess
 )
 from rest_framework_simplejwt.views import TokenObtainPairView
-from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+
+
+class RegisterView(generics.CreateAPIView):
+    queryset = CustomUser.objects.all()
+    permission_classes = (permissions.AllowAny,)
+    serializer_class = RegisterSerializer
 
 
 class CustomTokenObtainPairView(TokenObtainPairView):
-    serializer_class = TokenObtainPairSerializer
+    serializer_class = CustomUserListSerializer
 
     def post(self, request, *args, **kwargs):
         response = super().post(request, *args, **kwargs)
-        if response.status_code == 200:
-            response.data['next'] = '/projects/'
+        response.data.update({'user': CustomUserListSerializer(self.user).data})
         return response
 
 
@@ -36,12 +38,8 @@ class CustomUserViewSet(viewsets.ModelViewSet):
     Delete : Supprimer un CustomUser.
     """
 
-    def get_queryset(self):
-        queryset = CustomUser.objects.all()
-        is_active = self.request.query_params.get('is_active')
-        if is_active is not None:
-            queryset = queryset.filter(is_active=is_active.lower() == 'true')
-        return queryset
+    queryset = CustomUser.objects.all()
+    serializer_class = CustomUserDetailSerializer
 
     def get_permissions(self):
         if self.action == 'list':
@@ -60,7 +58,15 @@ class CustomUserViewSet(viewsets.ModelViewSet):
         elif self.action == 'retrieve':
             return CustomUserDetailSerializer
         elif self.action == 'create':
-            return CustomUserCreateSerializer
+            return CustomUserDetailSerializer
         elif self.action == 'update':
-            return CustomUserUpdateSerializer
+            return CustomUserDetailSerializer
         return CustomUserDetailSerializer
+
+    def get(self, request, *args, **kwargs):
+        if self.action == 'list':
+            return self.list(request, *args, **kwargs)
+        return super().retrieve(request, *args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        return super().create(request, *args, **kwargs)
