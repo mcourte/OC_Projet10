@@ -18,15 +18,6 @@ class LoginSerializer(serializers.Serializer):
         """
         Valide les données de connexion fournies par l'utilisateur.
 
-        Args:
-            data (dict): Les données de connexion comprenant le nom d'utilisateur et le mot de passe.
-
-        Raises:
-            serializers.ValidationError: Si le nom d'utilisateur ou le mot de passe est incorrect,
-                                          ou s'ils ne sont pas fournis.
-
-        Returns:
-            dict: Les données validées, incluant l'utilisateur authentifié.
         """
         username = data.get('username')
         password = data.get('password')
@@ -36,9 +27,9 @@ class LoginSerializer(serializers.Serializer):
             if user:
                 data['user'] = user
             else:
-                raise serializers.ValidationError('Invalid username or password')
+                raise serializers.ValidationError("Nom d'utilisateur ou mot de passe invalide")
         else:
-            raise serializers.ValidationError('Must include "username" and "password"')
+            raise serializers.ValidationError("Les champs 'Nom d'utilisateur' et ' mot de passe' doivent être remplis")
 
         return data
 
@@ -57,12 +48,6 @@ class RegisterSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         """
         Crée un nouvel utilisateur avec les données validées.
-
-        Args:
-            validated_data (dict): Les données validées pour créer un nouvel utilisateur.
-
-        Returns:
-            CustomUser: L'instance nouvellement créée de l'utilisateur.
         """
         user = CustomUser.objects.create_user(
             username=validated_data['username'],

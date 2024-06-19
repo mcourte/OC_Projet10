@@ -1,5 +1,5 @@
 from rest_framework.serializers import ModelSerializer
-from .models import Project, Issue, Comment, CustomUser
+from .models import Project, Issue, Comment, Contributor
 from rest_framework import serializers
 from authentication.serializers import CustomUserAuthorContributorSerializer
 
@@ -7,7 +7,7 @@ from authentication.serializers import CustomUserAuthorContributorSerializer
 class ProjectListSerializer(ModelSerializer):
     """Serializer pour lister les PROJECT."""
 
-    contributor_owner = CustomUserAuthorContributorSerializer(many=False)
+    author = CustomUserAuthorContributorSerializer(many=False)
     contributors = CustomUserAuthorContributorSerializer(many=True)
 
     class Meta:
@@ -15,7 +15,7 @@ class ProjectListSerializer(ModelSerializer):
         fields = [
             "project_id",
             "name",
-            "contributor_owner",
+            "author",
             "contributors",
         ]
 
@@ -23,7 +23,7 @@ class ProjectListSerializer(ModelSerializer):
 class ProjectSerializer(ModelSerializer):
     """Serializer pour afficher des informations détaillées sur un PROJECT."""
 
-    contributor_owner = CustomUserAuthorContributorSerializer(many=False)
+    author = CustomUserAuthorContributorSerializer(many=False)
     contributors = CustomUserAuthorContributorSerializer(many=True)
 
     class Meta:
@@ -34,7 +34,7 @@ class ProjectSerializer(ModelSerializer):
             "name",
             "description",
             "project_type",
-            "contributor_owner",
+            "author",
             "contributors",
         ]
 
@@ -71,19 +71,19 @@ class CommentSerializer(ModelSerializer):
             'name',
             'description',
             'issue_id',
-            'active'
         ]
 
 
 class ContributorSerializer(serializers.ModelSerializer):
-    """Serializer pour afficher des informations détaillées sur un CONTRIBUTOR."""
+    username = serializers.ReadOnlyField(source='contributor.username')
+    created_time = serializers.ReadOnlyField(source='contributor.created_time')
+    project = serializers.PrimaryKeyRelatedField(queryset=Project.objects.all())
 
     class Meta:
-        model = CustomUser
+        model = Contributor
         fields = [
             "id",
             "username",
-            "date_of_birth",
-            "can_be_contacted",
-            "can_data_be_shared",
+            "created_time",
+            "project"
         ]

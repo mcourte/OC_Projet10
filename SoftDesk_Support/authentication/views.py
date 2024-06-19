@@ -1,16 +1,51 @@
-from rest_framework import generics, permissions, viewsets
+from rest_framework import generics, permissions, viewsets, status
+from django.shortcuts import redirect
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework.permissions import AllowAny
+from rest_framework_simplejwt.tokens import RefreshToken
 from .models import CustomUser
 from .serializers import (
     CustomUserListSerializer,
     CustomUserDetailSerializer,
-    RegisterSerializer
+    RegisterSerializer,
+    LoginSerializer
 )
 from .permissions import (
     IsAdmin,
     IsUser,
     AllowAnonymousAccess
 )
-from rest_framework_simplejwt.views import TokenObtainPairView
+
+
+class LoginView(viewsets.ViewSet):
+    permission_classes = [AllowAny]
+
+    def create(self, request, *args, **kwargs):
+        serializer = LoginSerializer(data=request.data)
+        if serializer.is_valid():
+            user = serializer.validated_data['user']
+            refresh = RefreshToken.for_user(user)
+            response = Response({
+                'refresh': str(refresh),
+                'access': str(refresh.access_token),
+            })
+            # Redirection après la connexion
+            response['Location'] = '/api/projects/'
+            response.status_code = status.HTTP_303_SEE_OTHER
+            return response
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class RootView(APIView):
+    """
+    Redirige les utilisateurs non authentifiés vers la page de connexion,
+    et les utilisateurs authentifiés vers la liste des projets.
+    """
+    def get(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return redirect('login')
+        return redirect('projects')
 
 
 class RegisterView(generics.CreateAPIView):
@@ -23,26 +58,6 @@ class RegisterView(generics.CreateAPIView):
     queryset = CustomUser.objects.all()
     permission_classes = (permissions.AllowAny)
     serializer_class = RegisterSerializer
-
-
-class CustomTokenObtainPairView(TokenObtainPairView):
-    """
-    Vue personnalisée pour obtenir un token JWT.
-
-    Cette vue permet à un utilisateur de s'authentifier et de recevoir un token JWT.
-    """
-
-    serializer_class = CustomUserListSerializer
-
-    def post(self, request, *args, **kwargs):
-        """
-        Gère les requêtes POST pour l'obtention du token.
-
-        Ajoute les informations de l'utilisateur au token retourné.
-        """
-        response = super().post(request, *args, **kwargs)
-        response.data.update({'user': CustomUserListSerializer(self.user).data})
-        return response
 
 
 class CustomUserViewSet(viewsets.ModelViewSet):

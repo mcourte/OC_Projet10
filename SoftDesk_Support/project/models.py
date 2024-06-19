@@ -48,7 +48,7 @@ class Project(models.Model):
 
     updated_time = models.DateTimeField(auto_now=True, verbose_name='date de mise à jour')
 
-    contributor_owner = models.ForeignKey(
+    author = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET(get_admin_user),
         related_name='owned_projects',
@@ -226,7 +226,7 @@ class Comment(models.Model):
     """
     Modèle représentant un commentaire sur une issue.
     """
-    uuid = models.UUIDField(
+    comment_id = models.UUIDField(
         default=uuid.uuid4,
         editable=False,
         unique=True

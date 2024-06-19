@@ -20,17 +20,17 @@ class ProjectAdmin(admin.ModelAdmin):
         'description',
         'created_time',
         'updated_time',
-        'contributor_owner',
+        'author',
     )
     search_fields = ('name', 'project_type', 'description')
     fields = (
         'name',
         'project_type',
         'description',
-        'contributor_owner',
+        'author',
     )
     readonly_fields = ('created_time', 'updated_time')
-    list_filter = ('project_type', 'created_time', 'updated_time', 'contributor_owner')
+    list_filter = ('project_type', 'created_time', 'updated_time', 'author')
     inlines = [ContributorInline]  # Ajout de l'inline admin ici
 
 

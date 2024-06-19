@@ -2,7 +2,7 @@ from django.shortcuts import get_object_or_404, redirect
 from rest_framework import viewsets, status
 from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError, PermissionDenied
-from .models import Project, Issue, Comment
+from .models import Project, Issue, Comment, Contributor
 from .serializers import (
     ProjectSerializer,
     ProjectListSerializer,
@@ -17,62 +17,40 @@ from rest_framework.permissions import AllowAny
 
 
 class LoginView(viewsets.ViewSet):
-    """
-    Permet à toute personne accédant à l'application de se connecter ou de créer un compte.
-    """
     permission_classes = [AllowAny]
 
-    def list(self, request, *args, **kwargs):
-        # Provide information about how to use the endpoint
-        return Response({
-            'actions': {
-                'login': {
-                    'method': 'POST',
-                    'fields': {
-                        'username': 'string',
-                        'password': 'string'
-                    }
-                },
-                'register': {
-                    'method': 'POST',
-                    'fields': {
-                        'username': 'string',
-                        'password': 'string',
-                        'email': 'string'
-                    }
-                }
-            }
-        })
-
-    def create(self, request, *args, **kwargs):
-        action = request.data.get('action')
-        if action == 'login':
-            return self.login(request)
-        elif action == 'register':
-            return self.register(request)
-        else:
-            return Response({'detail': 'Invalid action'}, status=status.HTTP_400_BAD_REQUEST)
-
-    def login(self, request):
+    def create(self, request):
         serializer = LoginSerializer(data=request.data)
         if serializer.is_valid():
             user = serializer.validated_data['user']
             refresh = RefreshToken.for_user(user)
-            return Response({
+            response = Response({
                 'refresh': str(refresh),
                 'access': str(refresh.access_token),
             })
+            # Redirection après la connexion
+            response['Location'] = '/api/projects/'
+            response.status_code = status.HTTP_303_SEE_OTHER
+            return response
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    def register(self, request):
+
+class RegisterView(viewsets.ViewSet):
+    permission_classes = [AllowAny]
+
+    def create(self, request):
         serializer = RegisterSerializer(data=request.data)
         if serializer.is_valid():
             user = serializer.save()
             refresh = RefreshToken.for_user(user)
-            return Response({
+            response = Response({
                 'refresh': str(refresh),
                 'access': str(refresh.access_token),
             }, status=status.HTTP_201_CREATED)
+            # Redirection après l'inscription
+            response['Location'] = '/api/projects/'
+            response.status_code = status.HTTP_303_SEE_OTHER
+            return response
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -134,6 +112,7 @@ class ProjectDetailViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthorOrContributor | IsAuthenticated]
     queryset = Project.objects.all()
     serializer_class = ProjectSerializer
+    lookup_field = 'project_id'
 
     def get_serializer_class(self):
         return ProjectSerializer
@@ -184,61 +163,49 @@ class ProjectDetailViewSet(viewsets.ModelViewSet):
 
 
 class ContributorViewSet(viewsets.ModelViewSet):
-    """
-    Permet de gérer les opérations CRUD sur le modèle Contributor.
-
-    Create : Créer un Contributor.
-    Read : Visualiser un Contributor.
-    Update : Modifier un Contributor.
-    Delete : Supprimer un Contributor.
-    """
-
     serializer_class = ContributorSerializer
     permission_classes = [IsAuthorOrContributor]
+    lookup_field = 'id'  # Assuming 'id' is the field to lookup contributors
 
     def get_queryset(self):
-        return self.project.contributors.all().order_by("created_time")
+        project = self.get_project()
+        return Contributor.objects.filter(project=project).order_by("contributor__created_time")
 
     def get_project(self):
         if not hasattr(self, '_project'):
-            self._project = get_object_or_404(Project.objects.all().prefetch_related("contributors"),
-                                              pk=self.kwargs["project_pk"])
+            self._project = get_object_or_404(Project.objects.all(), project_id=self.kwargs["project_id"])
         return self._project
 
     def get_serializer_class(self):
         if self.action == "retrieve":
             return ContributorSerializer
-
         return super().get_serializer_class()
 
-    def post(self, request, *args, **kwargs):
-        action = request.data.get('action', 'create')
+    def create(self, request, *args, **kwargs):
+        project = self.get_project()
+        if request.user != project.author:
+            raise ValidationError("Seul l'auteur du projet peut ajouter des contributeurs.")
 
-        if action == 'create':
-            if request.user != self.project.author:
-                raise ValidationError("Seul l'auteur du projet peut ajouter des contributeurs.")
-            serializer = self.get_serializer(data=request.data)
-            if serializer.is_valid():
-                self.project.contributors.add(serializer.validated_data["user"])
-                return Response(
-                    {"message": "Le Contributeur a été ajouté avec succès."},
-                    status=status.HTTP_201_CREATED
-                )
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        serializer = self.get_serializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(project=project)
+            return Response(
+                {"message": "Le Contributeur a été ajouté avec succès."},
+                status=status.HTTP_201_CREATED
+            )
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        elif action == 'destroy':
-            if request.user == self.project.author:
-                instance = self.get_object()
-                self.project.contributors.remove(instance)
-                return Response(
-                    {"message": "Le Contributeur a été supprimé avec succès."},
-                    status=status.HTTP_204_NO_CONTENT,
-                )
-            else:
-                raise ValidationError("Seul l'auteur du Projet peut supprimer des Contributeurs.")
-
+    def destroy(self, request, *args, **kwargs):
+        project = self.get_project()
+        if request.user == project.author:
+            instance = self.get_object()
+            self.perform_destroy(instance)
+            return Response(
+                {"message": "Le Contributeur a été supprimé avec succès."},
+                status=status.HTTP_204_NO_CONTENT,
+            )
         else:
-            raise ValidationError("Action non valide.")
+            raise ValidationError("Seul l'auteur du Projet peut supprimer des Contributeurs.")
 
 
 class IssueViewSet(viewsets.ModelViewSet):
@@ -253,10 +220,11 @@ class IssueViewSet(viewsets.ModelViewSet):
 
     serializer_class = IssueSerializer
     permission_classes = [IsAuthorOrContributor]
+    lookup_field = 'issue_id'
 
     def get_queryset(self):
         if self.action == 'list':
-            return Issue.objects.filter(project_id=self.kwargs.get('project_pk'), active=True)
+            return Issue.objects.filter(project_id=self.kwargs.get('project_id'))
         return Issue.objects.all()
 
     def post(self, request, *args, **kwargs):
@@ -322,14 +290,14 @@ class CommentViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         if self.action == 'list':
-            return Comment.objects.filter(issue_id=self.kwargs.get('issue_pk'))
+            return Comment.objects.filter(issue_id=self.kwargs.get('issue_id'))
         return Comment.objects.all()
 
     @property
     def comment(self):
         if self._comment is None:
             self._comment = Comment.objects.filter(
-                issue_id=self.kwargs["issue_pk"]
+                issue_id=self.kwargs["issue_id"]
             )
 
         return self._comment

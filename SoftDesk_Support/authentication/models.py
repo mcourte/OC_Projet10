@@ -46,3 +46,8 @@ class CustomUser(AbstractUser):
         editable=False,
         unique=True
     )
+
+    created_time = models.DateTimeField(
+        default=timezone.now,
+        verbose_name="date de création"
+    )
