@@ -1,4 +1,4 @@
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, redirect
 from rest_framework import viewsets, status
 from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError, PermissionDenied
@@ -13,19 +13,42 @@ from .serializers import (
 from authentication.serializers import LoginSerializer, RegisterSerializer
 from rest_framework_simplejwt.tokens import RefreshToken
 from .permissions import IsAuthorOrContributor, IsAuthenticated
-from authentication.permissions import AllowAnonymousAccess
+from rest_framework.permissions import AllowAny
 
 
 class LoginView(viewsets.ViewSet):
     """
     Permet à toute personne accédant à l'application de se connecter ou de créer un compte.
     """
-    permission_classes = [AllowAnonymousAccess]
+    permission_classes = [AllowAny]
+
+    def list(self, request, *args, **kwargs):
+        # Provide information about how to use the endpoint
+        return Response({
+            'actions': {
+                'login': {
+                    'method': 'POST',
+                    'fields': {
+                        'username': 'string',
+                        'password': 'string'
+                    }
+                },
+                'register': {
+                    'method': 'POST',
+                    'fields': {
+                        'username': 'string',
+                        'password': 'string',
+                        'email': 'string'
+                    }
+                }
+            }
+        })
 
     def create(self, request, *args, **kwargs):
-        if 'action' in request.data and request.data['action'] == 'login':
+        action = request.data.get('action')
+        if action == 'login':
             return self.login(request)
-        elif 'action' in request.data and request.data['action'] == 'register':
+        elif action == 'register':
             return self.register(request)
         else:
             return Response({'detail': 'Invalid action'}, status=status.HTTP_400_BAD_REQUEST)
@@ -67,16 +90,10 @@ class HomeViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         if self.action == 'list':
             return Project.objects.all()
-        elif self.action == 'projects_as_contributor':
-            return self.request.user.projects_as_contributor.all()
 
     def get(self, request, *args, **kwargs):
         if self.action == 'list':
             return self.list(request, *args, **kwargs)
-        elif self.action == 'projects_as_contributor':
-            queryset = self.get_queryset()
-            serializer = self.get_serializer(queryset, many=True)
-            return Response(serializer.data)
 
     def post(self, request, *args, **kwargs):
         return super().create(request, *args, **kwargs)
@@ -86,7 +103,6 @@ class ProjectListViewSet(viewsets.ModelViewSet):
     """
     Permet de gérer les opérations CRUD sur le modèle Project.
     """
-
     permission_classes = [IsAuthorOrContributor]
 
     def get_serializer_class(self):
@@ -97,8 +113,12 @@ class ProjectListViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         return Project.objects.all()
 
-    def post(self, request, *args, **kwargs):
-        return super().create(request, *args, **kwargs)
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(author=request.user)
+            return redirect('projects')
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class ProjectDetailViewSet(viewsets.ModelViewSet):

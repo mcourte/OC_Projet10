@@ -22,9 +22,9 @@ class Project(models.Model):
         ('Android', 'Android'),
     ]
 
-    project_id = models.UUIDField(
+    project_id = models.CharField(
+        max_length=50,
         primary_key=True,
-        default=uuid.uuid4,
         editable=False,
         unique=True,
         verbose_name="project ID",
@@ -55,6 +55,27 @@ class Project(models.Model):
         related_name='contributions',
         help_text='Project contributors'
     )
+
+    def generate_project_id(self):
+        initials = ''.join([word[0].upper() for word in self.name.split()])
+        base_id = f"project_{initials}"
+        similar_ids = Project.objects.filter(project_id__startswith=base_id).values_list('project_id', flat=True)
+
+        if not similar_ids:
+            return base_id
+
+        suffix = 1
+        new_id = f"{base_id}_{suffix}"
+        while new_id in similar_ids:
+            suffix += 1
+            new_id = f"{base_id}_{suffix}"
+
+        return new_id
+
+    def save(self, *args, **kwargs):
+        if not self.project_id:
+            self.project_id = self.generate_project_id()
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return self.name
@@ -112,8 +133,7 @@ class Issue(models.Model):
         blank=False
     )
 
-    issue_id = models.UUIDField(
-        default=uuid.uuid4,
+    issue_id = models.PositiveIntegerField(
         editable=False,
         unique=True,
         verbose_name="issue ID",
@@ -163,6 +183,16 @@ class Issue(models.Model):
         auto_now_add=True,
         verbose_name="created time"
     )
+
+    def save(self, *args, **kwargs):
+        if not self.issue_id:
+            # Generate the next issue_id for the related project
+            last_issue = Issue.objects.filter(project=self.project).order_by('issue_id').last()
+            if last_issue:
+                self.issue_id = last_issue.issue_id + 1
+            else:
+                self.issue_id = 1
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.title} ({self.get_status_display()})"
