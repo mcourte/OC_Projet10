@@ -7,13 +7,20 @@ from datetime import timedelta
 
 
 def validate_age(value):
+    """
+    Valide que la date de naissance correspond à un âge supérieur à 15 ans.
+    """
     today = timezone.now().date()
     age = today - value
     if age < timedelta(days=15*365):
-        raise ValidationError('You must be over 15 years old.')
+        raise ValidationError('Vous devez avoir plus de 15 ans pour vous inscrire.')
 
 
 class CustomUser(AbstractUser):
+    """
+    Modèle d'utilisateur personnalisé.
+    """
+
     username = models.CharField(max_length=20, unique=True)
 
     password = models.CharField(max_length=12, unique=False)

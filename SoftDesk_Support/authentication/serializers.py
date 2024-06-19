@@ -4,10 +4,30 @@ from django.contrib.auth import authenticate
 
 
 class LoginSerializer(serializers.Serializer):
+    """
+    Sérialiseur pour la connexion des utilisateurs.
+
+    Ce sérialiseur valide les informations d'identification de l'utilisateur
+    et authentifie l'utilisateur en utilisant le nom d'utilisateur et le mot de passe.
+    """
+
     username = serializers.CharField()
     password = serializers.CharField(write_only=True)
 
     def validate(self, data):
+        """
+        Valide les données de connexion fournies par l'utilisateur.
+
+        Args:
+            data (dict): Les données de connexion comprenant le nom d'utilisateur et le mot de passe.
+
+        Raises:
+            serializers.ValidationError: Si le nom d'utilisateur ou le mot de passe est incorrect,
+                                          ou s'ils ne sont pas fournis.
+
+        Returns:
+            dict: Les données validées, incluant l'utilisateur authentifié.
+        """
         username = data.get('username')
         password = data.get('password')
 
@@ -24,11 +44,26 @@ class LoginSerializer(serializers.Serializer):
 
 
 class RegisterSerializer(serializers.ModelSerializer):
+    """
+    Sérialiseur pour l'enregistrement des utilisateurs.
+
+    Ce sérialiseur est utilisé pour créer un nouvel utilisateur avec les champs spécifiés.
+    """
+
     class Meta:
         model = CustomUser
         fields = ['username', 'password', 'date_of_birth', 'can_be_contacted', 'can_data_be_shared']
 
     def create(self, validated_data):
+        """
+        Crée un nouvel utilisateur avec les données validées.
+
+        Args:
+            validated_data (dict): Les données validées pour créer un nouvel utilisateur.
+
+        Returns:
+            CustomUser: L'instance nouvellement créée de l'utilisateur.
+        """
         user = CustomUser.objects.create_user(
             username=validated_data['username'],
             password=validated_data['password'],
@@ -62,7 +97,7 @@ class CustomUserDetailSerializer(serializers.ModelSerializer):
 
     Ce sérialiseur est utilisé pour récupérer des informations détaillées sur une instance CustomUser.
     Il inclut les champs pour l'identifiant, le nom d'utilisateur, le mot de passe, la date de naissance,
-    peut_être_contacté, peut_partager_des_données et heure_de_création.
+    le consentement pour être contacté, le consentement pour partager des données, et la date de création.
     """
 
     class Meta:

@@ -7,6 +7,9 @@ from django.core.exceptions import ObjectDoesNotExist
 
 
 def get_admin_user():
+    """
+    Fonction pour récupérer l'utilisateur administrateur.
+    """
     User = get_user_model()
     try:
         return User.objects.filter(is_superuser=True).first()
@@ -15,6 +18,10 @@ def get_admin_user():
 
 
 class Project(models.Model):
+    """
+    Modèle représentant un projet.
+    """
+
     PROJECT_TYPES = [
         ('Backend', 'Backend'),
         ('Frontend', 'Frontend'),
@@ -28,35 +35,39 @@ class Project(models.Model):
         editable=False,
         unique=True,
         verbose_name="project ID",
-        help_text="Unique ID of the project"
+        help_text="Identifiant unique du projet"
     )
 
-    name = models.CharField(max_length=255, help_text='Name of project')
+    name = models.CharField(max_length=255, help_text='Nom du projet')
 
-    project_type = models.CharField(max_length=10, choices=PROJECT_TYPES, help_text='Type of project')
+    project_type = models.CharField(max_length=10, choices=PROJECT_TYPES, help_text='Type de projet')
 
-    description = models.TextField(blank=False, help_text='Description of the project')
+    description = models.TextField(blank=False, help_text='Description du projet')
 
-    created_time = models.DateTimeField(auto_now_add=True, verbose_name='created time')
+    created_time = models.DateTimeField(auto_now_add=True, verbose_name='date de création')
 
-    updated_time = models.DateTimeField(auto_now=True, verbose_name='updated date')
+    updated_time = models.DateTimeField(auto_now=True, verbose_name='date de mise à jour')
 
     contributor_owner = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET(get_admin_user),
         related_name='owned_projects',
         null=True,
-        blank=True
+        blank=True,
+        verbose_name="propriétaire du projet"
     )
 
     contributors = models.ManyToManyField(
         to=settings.AUTH_USER_MODEL,
         through='Contributor',
         related_name='contributions',
-        help_text='Project contributors'
+        help_text='Contributeurs du projet'
     )
 
     def generate_project_id(self):
+        """
+        Génère un identifiant unique pour le projet basé sur ses initiales.
+        """
         initials = ''.join([word[0].upper() for word in self.name.split()])
         base_id = f"project_{initials}"
         similar_ids = Project.objects.filter(project_id__startswith=base_id).values_list('project_id', flat=True)
@@ -73,6 +84,9 @@ class Project(models.Model):
         return new_id
 
     def save(self, *args, **kwargs):
+        """
+        Surcharge de la méthode save() pour générer un project_id s'il n'est pas défini.
+        """
         if not self.project_id:
             self.project_id = self.generate_project_id()
         super().save(*args, **kwargs)
@@ -82,14 +96,16 @@ class Project(models.Model):
 
 
 class Contributor(models.Model):
-    """Model representing a contributor."""
+    """
+    Modèle représentant un contributeur d'un projet.
+    """
 
     contributor = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
     project = models.ForeignKey(
         Project,
         on_delete=models.CASCADE,
         related_name="contributor_relationship",
-        help_text="Project to which the contributor contributes",
+        help_text="Projet auquel le contributeur contribue",
     )
 
     def __str__(self):
@@ -97,38 +113,42 @@ class Contributor(models.Model):
 
 
 class Issue(models.Model):
+    """
+    Modèle représentant une issue d'un projet.
+    """
+
     PRIORITY_CHOICES = [
-        ("LOW", "Low"),
-        ("MEDIUM", "Medium"),
-        ("HIGH", "High"),
+        ("LOW", "Basse"),
+        ("MEDIUM", "Moyenne"),
+        ("HIGH", "Haute"),
     ]
 
     TAG_CHOICES = [
-        ("BUG", "Bug"),
-        ("FEATURE", "Feature"),
-        ("TASK", "Task"),
+        ("BUG", "Bogue"),
+        ("FEATURE", "Fonctionnalité"),
+        ("TASK", "Tâche"),
     ]
 
     STATUS_CHOICES = [
-        ("TO_DO", "To Do"),
-        ("IN_PROGRESS", "In Progress"),
-        ("FINISHED", "Finished"),
+        ("TO_DO", "À faire"),
+        ("IN_PROGRESS", "En cours"),
+        ("FINISHED", "Terminée"),
     ]
 
     author = models.ForeignKey(
         to=settings.AUTH_USER_MODEL,
         on_delete=models.SET(get_admin_user),
         related_name="issue_authors",
-        verbose_name="issue author",
-        help_text="Issue author"
+        verbose_name="auteur de l'issue",
+        help_text="Auteur de l'issue"
     )
 
     project = models.ForeignKey(
         Project,
         on_delete=models.CASCADE,
         related_name="issues",
-        verbose_name="related project",
-        help_text="Project to which the issue belongs",
+        verbose_name="projet associé",
+        help_text="Projet auquel l'issue appartient",
         null=False,
         blank=False
     )
@@ -136,38 +156,38 @@ class Issue(models.Model):
     issue_id = models.PositiveIntegerField(
         editable=False,
         unique=True,
-        verbose_name="issue ID",
-        help_text="Unique ID of the issue"
+        verbose_name="ID de l'issue",
+        help_text="Identifiant unique de l'issue"
     )
 
     title = models.CharField(
         max_length=255,
-        help_text="Title of the issue"
+        help_text="Titre de l'issue"
     )
 
     description = models.TextField(
-        help_text="Description of the issue"
+        help_text="Description de l'issue"
     )
 
     priority = models.CharField(
         max_length=20,
         choices=PRIORITY_CHOICES,
         default="MEDIUM",
-        help_text="Issue priority"
+        help_text="Priorité de l'issue"
     )
 
     tag = models.CharField(
         max_length=20,
         choices=TAG_CHOICES,
         default="BUG",
-        help_text="Tag of the issue"
+        help_text="Catégorie de l'issue"
     )
 
     status = models.CharField(
         max_length=20,
         choices=STATUS_CHOICES,
         default="TO_DO",
-        help_text="Status of the issue"
+        help_text="Statut de l'issue"
     )
 
     assigned_to = models.ForeignKey(
@@ -176,17 +196,21 @@ class Issue(models.Model):
         null=True,
         blank=True,
         related_name="assigned_issues",
-        help_text="User assigned to the issue"
+        verbose_name="utilisateur assigné",
+        help_text="Utilisateur assigné à l'issue"
     )
 
     created_time = models.DateTimeField(
         auto_now_add=True,
-        verbose_name="created time"
+        verbose_name="date de création"
     )
 
     def save(self, *args, **kwargs):
+        """
+        Surcharge de la méthode save() pour générer un issue_id s'il n'est pas défini.
+        """
         if not self.issue_id:
-            # Generate the next issue_id for the related project
+            # Génère le prochain issue_id pour le projet associé
             last_issue = Issue.objects.filter(project=self.project).order_by('issue_id').last()
             if last_issue:
                 self.issue_id = last_issue.issue_id + 1
@@ -199,6 +223,9 @@ class Issue(models.Model):
 
 
 class Comment(models.Model):
+    """
+    Modèle représentant un commentaire sur une issue.
+    """
     uuid = models.UUIDField(
         default=uuid.uuid4,
         editable=False,
