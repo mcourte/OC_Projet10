@@ -287,20 +287,12 @@ class CommentViewSet(viewsets.ModelViewSet):
 
     serializer_class = CommentSerializer
     permission_classes = [IsAuthorOrContributor]
+    lookup_field = 'comment_id'
 
     def get_queryset(self):
         if self.action == 'list':
-            return Comment.objects.filter(issue_id=self.kwargs.get('issue_id'))
+            return Comment.objects.filter(issue=self.kwargs.get('issue_id'))
         return Comment.objects.all()
-
-    @property
-    def comment(self):
-        if self._comment is None:
-            self._comment = Comment.objects.filter(
-                issue_id=self.kwargs["issue_id"]
-            )
-
-        return self._comment
 
     def post(self, request, *args, **kwargs):
         action = request.data.get('action', 'create')

@@ -118,21 +118,21 @@ class Issue(models.Model):
     """
 
     PRIORITY_CHOICES = [
-        ("LOW", "Basse"),
-        ("MEDIUM", "Moyenne"),
-        ("HIGH", "Haute"),
+        ("LOW", "Low"),
+        ("MEDIUM", "Medium"),
+        ("HIGH", "High"),
     ]
 
     TAG_CHOICES = [
-        ("BUG", "Bogue"),
-        ("FEATURE", "Fonctionnalité"),
-        ("TASK", "Tâche"),
+        ("BUG", "Bug"),
+        ("FEATURE", "Feature"),
+        ("TASK", "Task"),
     ]
 
     STATUS_CHOICES = [
-        ("TO_DO", "À faire"),
-        ("IN_PROGRESS", "En cours"),
-        ("FINISHED", "Terminée"),
+        ("TO_DO", "to do"),
+        ("IN_PROGRESS", "in_progress"),
+        ("FINISHED", "finished"),
     ]
 
     author = models.ForeignKey(

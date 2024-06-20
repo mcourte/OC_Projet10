@@ -1,5 +1,5 @@
 from rest_framework import permissions
-from project.models import Project, Issue, Comment, Contributor
+from project.models import Project, Issue, Comment
 
 
 class IsAuthorOrContributor(permissions.BasePermission):
@@ -15,24 +15,18 @@ class IsAuthorOrContributor(permissions.BasePermission):
             return obj.project
         elif isinstance(obj, Comment):
             return obj.issue.project
-        elif isinstance(obj, Contributor):
-            return obj.project
         return None
 
     def has_object_permission(self, request, view, obj):
         project = self._get_project_from_obj(obj)
 
-        # Vérifiez si l'objet a un champ 'author'
-        if hasattr(obj, 'author'):
-            # Vérifiez si l'utilisateur est l'auteur de l'objet
-            if request.user == obj.author:
-                return True
+        # Vérifiez si l'utilisateur est l'auteur de l'objet, si applicable
+        if hasattr(obj, 'author') and request.user == obj.author:
+            return True
 
-        # Si l'objet n'a pas de champ 'author', vérifiez si l'utilisateur est un contributeur du projet
-        elif project and request.user in project.contributors.all():
-            # Autoriser les méthodes sûres (GET, HEAD, OPTIONS)
-            if request.method in permissions.SAFE_METHODS:
-                return True
+        # Vérifiez si l'utilisateur est un contributeur du projet
+        if project and project.contributors.filter(id=request.user.id).exists():
+            return True
 
         return False
 

@@ -25,6 +25,7 @@ class ProjectSerializer(ModelSerializer):
 
     author = CustomUserAuthorContributorSerializer(many=False)
     contributors = CustomUserAuthorContributorSerializer(many=True)
+    issues_count = serializers.SerializerMethodField()
 
     class Meta:
         model = Project
@@ -36,12 +37,17 @@ class ProjectSerializer(ModelSerializer):
             "project_type",
             "author",
             "contributors",
+            'issues_count'
         ]
+
+    def get_issues_count(self, obj):
+        return Issue.objects.filter(project=obj).count()
 
 
 class IssueSerializer(ModelSerializer):
     """Serializer pour créer une ISSUE."""
-    project_id = serializers.UUIDField(write_only=True)
+    project_id = serializers.PrimaryKeyRelatedField(queryset=Project.objects.all(),
+                                                    source='project', read_only=False)
 
     class Meta:
         model = Issue
@@ -61,6 +67,7 @@ class IssueSerializer(ModelSerializer):
 
 class CommentSerializer(ModelSerializer):
     """Serializer pour créer un COMMENT."""
+    issue_id = serializers.PrimaryKeyRelatedField(queryset=Issue.objects.all(), source='issue', read_only=False)
 
     class Meta:
         model = Comment
