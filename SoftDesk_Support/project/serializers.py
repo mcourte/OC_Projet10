@@ -70,9 +70,9 @@ class IssueSerializer(ModelSerializer):
         return Comment.objects.filter(issue=obj).count()
 
 
-class CommentSerializer(ModelSerializer):
+class CommentSerializer(serializers.ModelSerializer):
     """Serializer pour créer un COMMENT."""
-    issue_id = serializers.PrimaryKeyRelatedField(queryset=Issue.objects.all(), source='issue', read_only=False)
+    issue_id = serializers.SerializerMethodField()
 
     class Meta:
         model = Comment
@@ -84,6 +84,9 @@ class CommentSerializer(ModelSerializer):
             'description',
             'issue_id',
         ]
+
+    def get_issue_id(self, obj):
+        return obj.issue.issue_id
 
 
 class ContributorSerializer(serializers.ModelSerializer):

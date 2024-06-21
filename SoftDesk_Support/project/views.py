@@ -220,8 +220,14 @@ class IssueViewSet(viewsets.ModelViewSet):
     lookup_field = 'issue_id'
 
     def get_queryset(self):
+        project_id = self.kwargs.get('project_id')
         if self.action == 'list':
-            return Issue.objects.filter(project_id=self.kwargs.get('project_id'))
+            # Vérifie si l'utilisateur est un contributeur du projet
+            project = get_object_or_404(Project, project_id=project_id)
+            if project.contributors.filter(pk=self.request.user.pk).exists():
+                return Issue.objects.filter(project_id=project_id)
+            else:
+                raise PermissionDenied("Vous n'êtes pas autorisé à voir les issues de ce projet.")
         return Issue.objects.all()
 
     def post(self, request, *args, **kwargs):
@@ -273,23 +279,25 @@ class IssueViewSet(viewsets.ModelViewSet):
 
 
 class CommentViewSet(viewsets.ModelViewSet):
-    """
-    Permet de gérer les opérations CRUD sur le modèle Comment.
-
-    Create : Créer un Comment.
-    Read : Visualiser un Comment.
-    Update : Modifier un Comment.
-    Delete : Supprimer un Comment.
-    """
-
+    queryset = Comment.objects.all()
     serializer_class = CommentSerializer
-    permission_classes = [IsAuthor | IsContributor]
     lookup_field = 'comment_id'
 
     def get_queryset(self):
-        if self.action == 'list':
-            return Comment.objects.filter(issue_id=self.kwargs.get('issue_id'))
-        return Comment.objects.all()
+        issue_id = self.kwargs.get('issue_id')
+        if issue_id:
+            return self.queryset.filter(issue__issue_id=issue_id)
+        return self.queryset
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
 
     def post(self, request, *args, **kwargs):
         action = request.data.get('action', 'create')

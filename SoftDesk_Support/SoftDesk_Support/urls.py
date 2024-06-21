@@ -62,7 +62,7 @@ urlpatterns = [
     path('api/projects/<str:project_id>/issues/<int:issue_id>/comments/',
          CommentViewSet.as_view({'get': 'list', 'post': 'create'}), name='comments'),
     path('api/projects/<str:project_id>/issues/<int:issue_id>/comments/<str:comment_id>/', CommentViewSet.as_view({
-        'get': 'retrieve', 'put': 'update', 'patch': 'partial_update', 'delete': 'destroy'}), name='comment'),
+         'get': 'retrieve', 'put': 'update', 'patch': 'partial_update', 'delete': 'destroy'}), name='comment'),
 
     path('', include(router.urls)),
 ]
