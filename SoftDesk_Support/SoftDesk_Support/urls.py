@@ -13,7 +13,7 @@ from authentication.views import (
 from project.views import (
      LoginView,
      RegisterView,
-     HomeViewSet,
+     ProjectListViewSet,
      ProjectDetailViewSet,
      ContributorViewSet,
      IssueViewSet,
@@ -37,15 +37,13 @@ urlpatterns = [
 
     # User URLs
     path('api/users/', CustomUserViewSet.as_view({'get': 'list', 'post': 'create'}), name='users'),
-    path('api/users/<int:user_id>/',
-         CustomUserViewSet.as_view({'get': 'retrieve', 'put': 'update', 'patch': 'partial_update',
-                                    'delete': 'destroy'}), name='user'),
+    path('api/users/<int:user_id>/', CustomUserViewSet.as_view({
+        'get': 'retrieve', 'put': 'update', 'patch': 'partial_update', 'delete': 'destroy'}), name='user'),
 
     # Project URLs
-    path('api/projects/', HomeViewSet.as_view({'get': 'list', 'post': 'create'}), name='projects'),
-    path('api/projects/<str:project_id>/',
-         ProjectDetailViewSet.as_view({'get': 'retrieve', 'put': 'update', 'patch': 'partial_update',
-                                       'delete': 'destroy'}), name='project'),
+    path('api/projects/', ProjectListViewSet.as_view({'get': 'list', 'post': 'create'}), name='projects'),
+    path('api/projects/<str:project_id>/', ProjectDetailViewSet.as_view({
+        'get': 'retrieve', 'put': 'update', 'patch': 'partial_update', 'delete': 'destroy'}), name='project'),
 
     # Contributor URLs
     path('api/projects/<str:project_id>/contributors/',
@@ -54,18 +52,16 @@ urlpatterns = [
          ContributorViewSet.as_view({'get': 'retrieve', 'delete': 'destroy'}), name='contributor'),
 
     # Issue URLs
-    path('api/projects/<str:project_id>/issues/', IssueViewSet.as_view({'get': 'list', 'post': 'create'}),
-         name='issues'),
-    path('api/projects/<str:project_id>/issues/<int:issue_id>/',
-         IssueViewSet.as_view({'get': 'retrieve', 'put': 'update', 'patch': 'partial_update',
-                               'delete': 'destroy'}), name='issue'),
+    path('api/projects/<str:project_id>/issues/',
+         IssueViewSet.as_view({'get': 'list', 'post': 'create'}), name='issues'),
+    path('api/projects/<str:project_id>/issues/<int:issue_id>/', IssueViewSet.as_view({
+        'get': 'retrieve', 'put': 'update', 'patch': 'partial_update', 'delete': 'destroy'}), name='issue'),
 
     # Comment URLs
     path('api/projects/<str:project_id>/issues/<int:issue_id>/comments/',
          CommentViewSet.as_view({'get': 'list', 'post': 'create'}), name='comments'),
-    path('api/projects/<str:project_id>/issues/<int:issue_id>/comments/<str:comment_id>/',
-         CommentViewSet.as_view({'get': 'retrieve', 'put': 'update', 'patch': 'partial_update',
-                                 'delete': 'destroy'}), name='comment'),
+    path('api/projects/<str:project_id>/issues/<int:issue_id>/comments/<str:comment_id>/', CommentViewSet.as_view({
+        'get': 'retrieve', 'put': 'update', 'patch': 'partial_update', 'delete': 'destroy'}), name='comment'),
 
     path('', include(router.urls)),
 ]
