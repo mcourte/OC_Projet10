@@ -37,8 +37,9 @@ urlpatterns = [
 
     # User URLs
     path('api/users/', CustomUserViewSet.as_view({'get': 'list', 'post': 'create'}), name='users'),
-    path('api/users/<int:user_id>/', CustomUserViewSet.as_view({
+    path('api/users/<int:id>/', CustomUserViewSet.as_view({
         'get': 'retrieve', 'put': 'update', 'patch': 'partial_update', 'delete': 'destroy'}), name='user'),
+
 
     # Project URLs
     path('api/projects/', ProjectListViewSet.as_view({'get': 'list', 'post': 'create'}), name='projects'),

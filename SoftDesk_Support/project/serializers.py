@@ -72,6 +72,7 @@ class IssueSerializer(ModelSerializer):
 
 class CommentSerializer(ModelSerializer):
     """Serializer pour créer un COMMENT."""
+    issue_id = serializers.PrimaryKeyRelatedField(queryset=Issue.objects.all(), source='issue', read_only=False)
 
     class Meta:
         model = Comment
@@ -81,6 +82,7 @@ class CommentSerializer(ModelSerializer):
             'author',
             'name',
             'description',
+            'issue_id',
         ]
 
 

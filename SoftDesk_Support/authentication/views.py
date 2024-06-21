@@ -14,7 +14,6 @@ from .serializers import (
 from .permissions import (
     IsAdmin,
     IsUser,
-    AllowAnonymousAccess
 )
 
 
@@ -72,15 +71,11 @@ class CustomUserViewSet(viewsets.ModelViewSet):
 
     queryset = CustomUser.objects.all()
     serializer_class = CustomUserDetailSerializer
+    lookup_field = 'id'
 
     def get_permissions(self):
         """
         Retourne les permissions en fonction de l'action.
-
-        - list : Doit être administrateur.
-        - create : Doit être authentifié.
-        - retrieve, update, partial_update, destroy : Doit être l'utilisateur concerné.
-        - Autres : Accès anonyme autorisé.
         """
         if self.action == 'list':
             permission_classes = [IsAdmin]
@@ -89,35 +84,20 @@ class CustomUserViewSet(viewsets.ModelViewSet):
         elif self.action in ['retrieve', 'update', 'partial_update', 'destroy']:
             permission_classes = [IsUser]
         else:
-            permission_classes = [AllowAnonymousAccess]
+            permission_classes = [permissions.AllowAny]
         return [permission() for permission in permission_classes]
 
     def get_serializer_class(self):
         """
         Retourne le serializer en fonction de l'action.
-
-        - list : Utilise CustomUserListSerializer.
-        - retrieve : Utilise CustomUserDetailSerializer.
-        - create : Utilise CustomUserDetailSerializer.
-        - update : Utilise CustomUserDetailSerializer.
-        - Autres : Utilise CustomUserDetailSerializer.
         """
         if self.action == 'list':
             return CustomUserListSerializer
-        elif self.action == 'retrieve':
-            return CustomUserDetailSerializer
-        elif self.action == 'create':
-            return CustomUserDetailSerializer
-        elif self.action == 'update':
-            return CustomUserDetailSerializer
         return CustomUserDetailSerializer
 
     def get(self, request, *args, **kwargs):
         """
         Gère les requêtes GET.
-
-        - list : Retourne la liste des utilisateurs.
-        - retrieve : Retourne les détails d'un utilisateur spécifique.
         """
         if self.action == 'list':
             return self.list(request, *args, **kwargs)
@@ -126,7 +106,5 @@ class CustomUserViewSet(viewsets.ModelViewSet):
     def post(self, request, *args, **kwargs):
         """
         Gère les requêtes POST pour la création d'un utilisateur.
-
-        Utilise la méthode create de ModelViewSet.
         """
         return super().create(request, *args, **kwargs)
