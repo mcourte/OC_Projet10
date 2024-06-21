@@ -48,6 +48,7 @@ class IssueSerializer(ModelSerializer):
     """Serializer pour créer une ISSUE."""
     project_id = serializers.PrimaryKeyRelatedField(queryset=Project.objects.all(),
                                                     source='project', read_only=False)
+    comment_count = serializers.SerializerMethodField()
 
     class Meta:
         model = Issue
@@ -62,12 +63,15 @@ class IssueSerializer(ModelSerializer):
             'assigned_to',
             'created_time',
             'project_id',
+            'comment_count'
         ]
+
+    def get_comment_count(self, obj):
+        return Comment.objects.filter(issue=obj).count()
 
 
 class CommentSerializer(ModelSerializer):
     """Serializer pour créer un COMMENT."""
-    issue_id = serializers.PrimaryKeyRelatedField(queryset=Issue.objects.all(), source='issue', read_only=False)
 
     class Meta:
         model = Comment
@@ -77,7 +81,6 @@ class CommentSerializer(ModelSerializer):
             'author',
             'name',
             'description',
-            'issue_id',
         ]
 
 

@@ -12,7 +12,7 @@ from .serializers import (
 )
 from authentication.serializers import LoginSerializer, RegisterSerializer
 from rest_framework_simplejwt.tokens import RefreshToken
-from .permissions import IsAuthorOrContributor, IsAuthenticated
+from .permissions import IsAuthor, IsContributor, IsAuthenticated
 from rest_framework.permissions import AllowAny
 
 
@@ -81,7 +81,7 @@ class ProjectListViewSet(viewsets.ModelViewSet):
     """
     Permet de gérer les opérations CRUD sur le modèle Project.
     """
-    permission_classes = [IsAuthorOrContributor]
+    permission_classes = [IsAuthor | IsContributor]
 
     def get_serializer_class(self):
         if self.action == 'list':
@@ -109,13 +109,10 @@ class ProjectDetailViewSet(viewsets.ModelViewSet):
     Delete : Supprimer un projet.
     """
 
-    permission_classes = [IsAuthorOrContributor | IsAuthenticated]
+    permission_classes = [IsAuthor | IsContributor]
     queryset = Project.objects.all()
     serializer_class = ProjectSerializer
     lookup_field = 'project_id'
-
-    def get_serializer_class(self):
-        return ProjectSerializer
 
     def get_queryset(self):
         return Project.objects.all()
@@ -164,8 +161,8 @@ class ProjectDetailViewSet(viewsets.ModelViewSet):
 
 class ContributorViewSet(viewsets.ModelViewSet):
     serializer_class = ContributorSerializer
-    permission_classes = [IsAuthorOrContributor]
-    lookup_field = 'id'  # Assuming 'id' is the field to lookup contributors
+    permission_classes = [IsAuthor | IsContributor]
+    lookup_field = 'id'
 
     def get_queryset(self):
         project = self.get_project()
@@ -219,7 +216,7 @@ class IssueViewSet(viewsets.ModelViewSet):
     """
 
     serializer_class = IssueSerializer
-    permission_classes = [IsAuthorOrContributor]
+    permission_classes = [IsAuthor | IsContributor]
     lookup_field = 'issue_id'
 
     def get_queryset(self):
@@ -286,12 +283,12 @@ class CommentViewSet(viewsets.ModelViewSet):
     """
 
     serializer_class = CommentSerializer
-    permission_classes = [IsAuthorOrContributor]
+    permission_classes = [IsAuthor | IsContributor]
     lookup_field = 'comment_id'
 
     def get_queryset(self):
         if self.action == 'list':
-            return Comment.objects.filter(issue=self.kwargs.get('issue_id'))
+            return Comment.objects.filter(issue_id=self.kwargs.get('issue_id'))
         return Comment.objects.all()
 
     def post(self, request, *args, **kwargs):
