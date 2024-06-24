@@ -5,6 +5,7 @@ from rest_framework.exceptions import ValidationError, PermissionDenied
 from .models import Project, Issue, Comment, Contributor
 from .serializers import (
     ProjectSerializer,
+    ProjectCreateUpdateSerializer,
     ProjectListSerializer,
     ContributorSerializer,
     IssueSerializer,
@@ -63,7 +64,7 @@ class HomeViewSet(viewsets.ModelViewSet):
     def get_serializer_class(self):
         if self.action == 'list':
             return ProjectListSerializer
-        return ProjectSerializer
+        return ProjectCreateUpdateSerializer
 
     def get_queryset(self):
         if self.action == 'list':
@@ -81,18 +82,17 @@ class ProjectListViewSet(viewsets.ModelViewSet):
     """
     Permet de gérer les opérations CRUD sur le modèle Project.
     """
+    queryset = Project.objects.all().order_by('-created_time')
+    serializer_class = ProjectListSerializer
     permission_classes = [IsAuthor | IsContributor]
 
     def get_serializer_class(self):
-        if self.action == 'list':
-            return ProjectListSerializer
-        return ProjectSerializer
-
-    def get_queryset(self):
-        return Project.objects.all()
+        if self.action in ['create', 'update', 'partial_update']:
+            return ProjectCreateUpdateSerializer
+        return self.serializer_class
 
     def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
+        serializer = ProjectCreateUpdateSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save(author=request.user)
             return redirect('projects')
@@ -120,17 +120,7 @@ class ProjectDetailViewSet(viewsets.ModelViewSet):
     def post(self, request, *args, **kwargs):
         action = request.data.get('action', 'create')
 
-        if action == 'create':
-            serializer = self.get_serializer(data=request.data)
-            if serializer.is_valid():
-                serializer.save(author=request.user)
-                return Response(
-                    {"message": "Le projet a été créé avec succès."},
-                    status=status.HTTP_201_CREATED
-                )
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-        elif action == 'update':
+        if action == 'update':
             instance = self.get_object()
             if request.user == instance.author:
                 serializer = self.get_serializer(instance, data=request.data, partial=True)
@@ -165,44 +155,38 @@ class ContributorViewSet(viewsets.ModelViewSet):
     lookup_field = 'id'
 
     def get_queryset(self):
+        project_id = self.kwargs['project_id']
+        return Contributor.objects.filter(project__project_id=project_id)
+
+    def perform_create(self, serializer):
+        project_id = self.kwargs['project_id']
+        project = get_object_or_404(Project, project_id=project_id)
+        serializer.save(project=project)
+
+    def post(self, request, *args, **kwargs):
+        action = request.data.get('action', 'create')
         project = self.get_project()
-        return Contributor.objects.filter(project=project).order_by("contributor__created_time")
+        if action == 'create':
+            if request.user != project.author:
+                return Response({"detail": "Seul l'auteur du projet peut ajouter des contributeurs."},
+                                status=status.HTTP_403_FORBIDDEN)
 
-    def get_project(self):
-        if not hasattr(self, '_project'):
-            self._project = get_object_or_404(Project.objects.all(), project_id=self.kwargs["project_id"])
-        return self._project
+            serializer = self.get_serializer(data=request.data)
+            if serializer.is_valid():
+                serializer.save(project=project)
+                return Response(serializer.data, status=status.HTTP_201_CREATED)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    def get_serializer_class(self):
-        if self.action == "retrieve":
-            return ContributorSerializer
-        return super().get_serializer_class()
-
-    def create(self, request, *args, **kwargs):
-        project = self.get_project()
-        if request.user != project.author:
-            raise ValidationError("Seul l'auteur du projet peut ajouter des contributeurs.")
-
-        serializer = self.get_serializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save(project=project)
-            return Response(
-                {"message": "Le Contributeur a été ajouté avec succès."},
-                status=status.HTTP_201_CREATED
-            )
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-    def destroy(self, request, *args, **kwargs):
-        project = self.get_project()
-        if request.user == project.author:
-            instance = self.get_object()
-            self.perform_destroy(instance)
-            return Response(
-                {"message": "Le Contributeur a été supprimé avec succès."},
-                status=status.HTTP_204_NO_CONTENT,
-            )
-        else:
-            raise ValidationError("Seul l'auteur du Projet peut supprimer des Contributeurs.")
+        elif action == 'destroy':
+            if request.user == project.author:
+                instance = self.get_object()
+                self.perform_destroy(instance)
+                return Response(
+                    {"message": "Le Contributeur a été supprimé avec succès."},
+                    status=status.HTTP_204_NO_CONTENT,
+                )
+            else:
+                raise ValidationError("Seul l'auteur du Projet peut supprimer des Contributeurs.")
 
 
 class IssueViewSet(viewsets.ModelViewSet):

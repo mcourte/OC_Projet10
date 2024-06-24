@@ -1,4 +1,5 @@
 from rest_framework import generics, permissions, viewsets, status
+from rest_framework.decorators import action
 from django.shortcuts import redirect
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -72,6 +73,12 @@ class CustomUserViewSet(viewsets.ModelViewSet):
     queryset = CustomUser.objects.all()
     serializer_class = CustomUserDetailSerializer
     lookup_field = 'id'
+
+    @action(detail=False, methods=['get'])
+    def list_users(self, request):
+        queryset = self.get_queryset()
+        serializer = CustomUserListSerializer(queryset, many=True)
+        return Response(serializer.data)
 
     def get_permissions(self):
         """

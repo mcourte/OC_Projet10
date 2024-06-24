@@ -40,7 +40,6 @@ urlpatterns = [
     path('api/users/<int:id>/', CustomUserViewSet.as_view({
         'get': 'retrieve', 'put': 'update', 'patch': 'partial_update', 'delete': 'destroy'}), name='user'),
 
-
     # Project URLs
     path('api/projects/', ProjectListViewSet.as_view({'get': 'list', 'post': 'create'}), name='projects'),
     path('api/projects/<str:project_id>/', ProjectDetailViewSet.as_view({
@@ -51,6 +50,8 @@ urlpatterns = [
          ContributorViewSet.as_view({'get': 'list', 'post': 'create'}), name='contributors'),
     path('api/projects/<str:project_id>/contributors/<int:id>/',
          ContributorViewSet.as_view({'get': 'retrieve', 'delete': 'destroy'}), name='contributor'),
+    path('api/users/list/', CustomUserViewSet.as_view({'get': 'list_users'}), name='users'),
+
 
     # Issue URLs
     path('api/projects/<str:project_id>/issues/',
