@@ -50,8 +50,6 @@ urlpatterns = [
          ContributorViewSet.as_view({'get': 'list', 'post': 'create'}), name='contributors'),
     path('api/projects/<str:project_id>/contributors/<int:id>/',
          ContributorViewSet.as_view({'get': 'retrieve', 'delete': 'destroy'}), name='contributor'),
-    path('api/users/list/', CustomUserViewSet.as_view({'get': 'list_users'}), name='users'),
-
 
     # Issue URLs
     path('api/projects/<str:project_id>/issues/',
