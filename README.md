@@ -109,7 +109,7 @@ Pour changer d utilisateur il faut repasser par l'adresse de depart de l API : h
 | 8    | user_two      | S3cret!!!      |
 
 
-#### Liste des points de terminaison de l'API (détaillés dans la [documentation](https://www.postman.com/mission-technologist-4095363/workspace/softdesk-support-api/collection/31959558-afa076dd-400c-48a3-bc19-424a35a94270?action=share&creator=31959558) :
+#### Liste des points de terminaison de l'API (détaillés dans la [documentation](https://www.postman.com/mission-technologist-4095363/workspace/softdesk-support-api/collection/31959558-afa076dd-400c-48a3-bc19-424a35a94270?action=share&creator=31959558)) :
 
 
 | #   | *Point de terminaison de l'API*                                           | *Méthode HTTP* | *URL (base: http://127.0.0.1:8000)*                              |
