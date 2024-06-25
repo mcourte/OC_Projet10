@@ -210,7 +210,6 @@ class Issue(models.Model):
         Surcharge de la méthode save() pour générer un issue_id s'il n'est pas défini.
         """
         if not self.issue_id:
-            # Génère le prochain issue_id pour le projet associé
             last_issue = Issue.objects.filter(project=self.project).order_by('issue_id').last()
             if last_issue:
                 self.issue_id = last_issue.issue_id + 1
