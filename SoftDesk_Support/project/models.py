@@ -108,6 +108,9 @@ class Contributor(models.Model):
         help_text="Projet auquel le contributeur contribue",
     )
 
+    class Meta:
+        unique_together = ('project', 'contributor')
+
     def __str__(self):
         return f"{self.contributor.username} - {self.project.name}"
 

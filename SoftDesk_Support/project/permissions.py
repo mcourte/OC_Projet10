@@ -1,11 +1,19 @@
 from rest_framework import permissions
-from project.models import Project, Issue, Comment
+from project.models import Project, Issue, Comment, Contributor
+from django.shortcuts import get_object_or_404
 
 
 class IsAuthor(permissions.BasePermission):
     """
     Permission pour permettre l'accès si l'utilisateur est l'auteur de l'objet.
     """
+    def has_permission(self, request, view):
+        project_id = view.kwargs.get('project_id')
+        if project_id:
+            project = get_object_or_404(Project, project_id=project_id)
+            return request.user == project.author
+        return False
+
     def has_object_permission(self, request, view, obj):
         if hasattr(obj, 'author'):
             return request.user == obj.author
@@ -24,6 +32,13 @@ class IsContributor(permissions.BasePermission):
         elif isinstance(obj, Comment):
             return obj.issue.project
         return None
+
+    def has_permission(self, request, view):
+        project_id = view.kwargs.get('project_id')
+        if project_id:
+            project = get_object_or_404(Project, project_id=project_id)
+            return Contributor.objects.filter(project=project, user=request.user).exists()
+        return False
 
     def has_object_permission(self, request, view, obj):
         project = self._get_project_from_obj(obj)

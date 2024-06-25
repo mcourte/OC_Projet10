@@ -118,5 +118,5 @@ class ContributorSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Contributor
-        fields = ['id', 'username', 'contributor', 'project']
+        fields = '__all__'
         read_only_fields = ['project']

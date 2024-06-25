@@ -18,6 +18,7 @@ from rest_framework.permissions import AllowAny
 
 
 class LoginView(viewsets.ViewSet):
+    """Permet aux utilisateurs de se connecter."""
     permission_classes = [AllowAny]
 
     def create(self, request):
@@ -29,7 +30,6 @@ class LoginView(viewsets.ViewSet):
                 'refresh': str(refresh),
                 'access': str(refresh.access_token),
             })
-            # Redirection après la connexion
             response['Location'] = '/api/projects/'
             response.status_code = status.HTTP_303_SEE_OTHER
             return response
@@ -80,7 +80,7 @@ class HomeViewSet(viewsets.ModelViewSet):
 
 class ProjectListViewSet(viewsets.ModelViewSet):
     """
-    Permet de gérer les opérations CRUD sur le modèle Project.
+    Permet de voir la liste des Projets existants et d'en créer un nouveau.
     """
     queryset = Project.objects.all().order_by('-created_time')
     serializer_class = ProjectListSerializer
@@ -101,9 +101,7 @@ class ProjectListViewSet(viewsets.ModelViewSet):
 
 class ProjectDetailViewSet(viewsets.ModelViewSet):
     """
-    Permet de gérer les opérations CRUD sur le modèle Project.
-
-    Create : Créer un projet.
+    Permet de gérer les opérations suivantes sur le modèle Project :
     Read : Visualiser un projet.
     Update : Modifier un projet.
     Delete : Supprimer un projet.
@@ -150,9 +148,13 @@ class ProjectDetailViewSet(viewsets.ModelViewSet):
 
 
 class ContributorViewSet(viewsets.ModelViewSet):
+    """
+    Permet de voir la liste des Contributor d'un projet, en ajoutant de nouveaux,
+    ou de supprimer un ou des existants.
+    """
     serializer_class = ContributorSerializer
     permission_classes = [IsAuthor | IsContributor]
-    lookup_field = 'id'
+    lookup_field = 'contributor_id'
 
     def get_queryset(self):
         project_id = self.kwargs['project_id']
@@ -163,13 +165,19 @@ class ContributorViewSet(viewsets.ModelViewSet):
         project = get_object_or_404(Project, project_id=project_id)
         serializer.save(project=project)
 
-    def post(self, request, *args, **kwargs):
+    def create(self, request, *args, **kwargs):
         action = request.data.get('action', 'create')
         project = self.get_project()
+
         if action == 'create':
             if request.user != project.author:
                 return Response({"detail": "Seul l'auteur du projet peut ajouter des contributeurs."},
                                 status=status.HTTP_403_FORBIDDEN)
+
+            contributor_id = request.data.get('contributor')
+            if Contributor.objects.filter(project=project, contributor_id=contributor_id).exists():
+                return Response({"detail": "L'utilisateur est déjà un contributeur de ce projet."},
+                                status=status.HTTP_400_BAD_REQUEST)
 
             serializer = self.get_serializer(data=request.data)
             if serializer.is_valid():
@@ -187,6 +195,10 @@ class ContributorViewSet(viewsets.ModelViewSet):
                 )
             else:
                 raise ValidationError("Seul l'auteur du Projet peut supprimer des Contributeurs.")
+
+    def get_project(self):
+        project_id = self.kwargs['project_id']
+        return get_object_or_404(Project, project_id=project_id)
 
 
 class IssueViewSet(viewsets.ModelViewSet):
