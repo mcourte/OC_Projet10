@@ -27,18 +27,13 @@ class IsContributor(permissions.BasePermission):
     def _get_project_from_obj(self, obj):
         if isinstance(obj, Project):
             return obj
+        if isinstance(obj, Contributor):
+            return obj.project
         elif isinstance(obj, Issue):
             return obj.project
         elif isinstance(obj, Comment):
             return obj.issue.project
         return None
-
-    def has_permission(self, request, view):
-        project_id = view.kwargs.get('project_id')
-        if project_id:
-            project = get_object_or_404(Project, project_id=project_id)
-            return Contributor.objects.filter(project=project, user=request.user).exists()
-        return False
 
     def has_object_permission(self, request, view, obj):
         project = self._get_project_from_obj(obj)

@@ -24,6 +24,7 @@ router = DefaultRouter()
 router.register(r'api/login', LoginView, basename='login')
 router.register(r'api/register', RegisterView, basename='register')
 
+
 urlpatterns = [
     path('', RootView.as_view(), name='root'),
     path('admin/', admin.site.urls, name="admin"),
@@ -49,7 +50,8 @@ urlpatterns = [
     path('api/projects/<str:project_id>/contributors/',
          ContributorViewSet.as_view({'get': 'list', 'post': 'create'}), name='contributors'),
     path('api/projects/<str:project_id>/contributors/<int:contributor_id>/',
-         ContributorViewSet.as_view({'get': 'retrieve', 'delete': 'destroy'}), name='contributor'),
+         ContributorViewSet.as_view({'get': 'retrieve', 'delete': 'destroy'}),
+         name='contributor'),
 
     # Issue URLs
     path('api/projects/<str:project_id>/issues/',
