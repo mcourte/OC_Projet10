@@ -4,6 +4,9 @@ from authentication.models import CustomUser
 
 
 class CustomUserAuthorContributorSerializer(serializers.ModelSerializer):
+    """
+    Serializer pour le modèle CustomUser, utilisé pour afficher les informations de l'auteur ou du contributeur.
+    """
     username = serializers.CharField(read_only=True)
 
     class Meta:
@@ -12,8 +15,9 @@ class CustomUserAuthorContributorSerializer(serializers.ModelSerializer):
 
 
 class ProjectListSerializer(serializers.ModelSerializer):
-    """Serializer pour lister les PROJECT."""
-
+    """
+    Serializer pour lister les projets.
+    """
     author = CustomUserAuthorContributorSerializer(many=False)
     contributors = CustomUserAuthorContributorSerializer(many=True)
 
@@ -28,13 +32,18 @@ class ProjectListSerializer(serializers.ModelSerializer):
 
 
 class ProjectCreateUpdateSerializer(serializers.ModelSerializer):
+    """
+    Serializer pour créer ou modifier un projet.
+    """
     class Meta:
         model = Project
         fields = ['name', 'description', 'project_type']
 
 
 class ProjectSerializer(serializers.ModelSerializer):
-    """Serializer pour afficher des informations détaillées sur un PROJECT."""
+    """
+    Serializer pour afficher des informations détaillées sur un projet.
+    """
     author = CustomUserAuthorContributorSerializer(many=False)
     contributors = CustomUserAuthorContributorSerializer(many=True)
     issues_count = serializers.SerializerMethodField()
@@ -55,10 +64,16 @@ class ProjectSerializer(serializers.ModelSerializer):
         ]
 
     def get_issues_count(self, obj):
+        """
+        Retourne le nombre d'issues pour un projet donné.
+        """
         return Issue.objects.filter(project=obj).count()
 
     def get_issue_titles(self, obj):
-        issues = Issue.objects.filter(project=obj).values_list('title', flat=True)
+        """
+        Retourne une liste de dictionnaires contenant l'ID et le titre de chaque issue associée au projet.
+        """
+        issues = Issue.objects.filter(project=obj).values('issue_id', 'title')
         return list(issues)
 
 
@@ -95,8 +110,9 @@ class IssueSerializer(serializers.ModelSerializer):
 
 
 class CommentSerializer(serializers.ModelSerializer):
-    """Serializer pour créer un COMMENT."""
-    issue_id = serializers.SerializerMethodField()
+    """Serializer pour créer un commentaire."""
+
+    issue_id = serializers.PrimaryKeyRelatedField(source='issue', read_only=True)
 
     class Meta:
         model = Comment
@@ -109,11 +125,11 @@ class CommentSerializer(serializers.ModelSerializer):
             'issue_id',
         ]
 
-    def get_issue_id(self, obj):
-        return obj.issue.issue_id
-
 
 class ContributorSerializer(serializers.ModelSerializer):
+    """
+    Serializer pour ajouter un contributeur.
+    """
     username = serializers.ReadOnlyField(source='contributor.username')
 
     class Meta:

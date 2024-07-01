@@ -5,18 +5,30 @@ from .models import CustomUser
 
 
 class CustomUserCreationForm(UserCreationForm):
+    """
+    Formulaire personnalisé pour la création d'un utilisateur.
+    """
+
     class Meta:
         model = CustomUser
         fields = ('username', 'email', 'password', 'date_of_birth', 'can_be_contacted', 'can_data_be_shared')
 
 
 class CustomUserChangeForm(UserChangeForm):
+    """
+    Formulaire personnalisé pour la modification d'un utilisateur.
+    """
+
     class Meta:
         model = CustomUser
         fields = ('username', 'email', 'password', 'date_of_birth', 'can_be_contacted', 'can_data_be_shared')
 
 
 class CustomUserAdmin(BaseUserAdmin):
+    """
+    Administration personnalisée pour le modèle CustomUser.
+    """
+
     form = CustomUserChangeForm
     add_form = CustomUserCreationForm
 
@@ -24,7 +36,7 @@ class CustomUserAdmin(BaseUserAdmin):
     list_filter = ('is_staff', 'is_active')
     fieldsets = (
         (None, {'fields': ('username', 'email', 'password')}),
-        ('Personal info', {'fields': ('date_of_birth',)}),
+        ('Informations personnelles', {'fields': ('date_of_birth',)}),
         ('Permissions', {'fields': ('is_staff', 'is_active')}),
     )
     add_fieldsets = (
@@ -36,4 +48,5 @@ class CustomUserAdmin(BaseUserAdmin):
     ordering = ('email',)
 
 
+# Enregistrement du modèle CustomUser avec l'interface d'administration personnalisée.
 admin.site.register(CustomUser, CustomUserAdmin)

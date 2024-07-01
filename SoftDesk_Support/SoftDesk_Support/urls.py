@@ -11,8 +11,6 @@ from authentication.views import (
      CustomUserViewSet,
 )
 from project.views import (
-     LoginView,
-     RegisterView,
      ProjectListViewSet,
      ProjectDetailViewSet,
      ContributorViewSet,
@@ -20,10 +18,8 @@ from project.views import (
      CommentViewSet
 )
 
-router = DefaultRouter()
-router.register(r'api/login', LoginView, basename='login')
-router.register(r'api/register', RegisterView, basename='register')
 
+router = DefaultRouter()
 
 urlpatterns = [
     path('', RootView.as_view(), name='root'),
@@ -44,7 +40,7 @@ urlpatterns = [
     # Project URLs
     path('api/projects/', ProjectListViewSet.as_view({'get': 'list', 'post': 'create'}), name='projects'),
     path('api/projects/<str:project_id>/', ProjectDetailViewSet.as_view({
-        'get': 'retrieve', 'put': 'update', 'patch': 'partial_update', 'delete': 'destroy'}), name='project'),
+         'get': 'retrieve', 'put': 'update', 'patch': 'partial_update', 'delete': 'destroy'}), name='project'),
 
     # Contributor URLs
     path('api/projects/<str:project_id>/contributors/',

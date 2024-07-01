@@ -152,16 +152,9 @@ class Issue(models.Model):
         related_name="issues",
         verbose_name="projet associé",
         help_text="Projet auquel l'issue appartient",
-        null=False,
-        blank=False
     )
 
-    issue_id = models.PositiveIntegerField(
-        editable=False,
-        unique=True,
-        verbose_name="ID de l'issue",
-        help_text="Identifiant unique de l'issue"
-    )
+    issue_id = models.AutoField(primary_key=True, verbose_name="ID de l'issue")
 
     title = models.CharField(
         max_length=255,
@@ -208,18 +201,6 @@ class Issue(models.Model):
         verbose_name="date de création"
     )
 
-    def save(self, *args, **kwargs):
-        """
-        Surcharge de la méthode save() pour générer un issue_id s'il n'est pas défini.
-        """
-        if not self.issue_id:
-            last_issue = Issue.objects.filter(project=self.project).order_by('issue_id').last()
-            if last_issue:
-                self.issue_id = last_issue.issue_id + 1
-            else:
-                self.issue_id = 1
-        super().save(*args, **kwargs)
-
     def __str__(self):
         return f"{self.title} ({self.get_status_display()})"
 
@@ -228,6 +209,7 @@ class Comment(models.Model):
     """
     Modèle représentant un commentaire sur une issue.
     """
+
     comment_id = models.UUIDField(
         default=uuid.uuid4,
         editable=False,
@@ -241,7 +223,7 @@ class Comment(models.Model):
 
     author = models.ForeignKey(
         settings.AUTH_USER_MODEL,
-        on_delete=models.SET(get_admin_user),
+        on_delete=models.CASCADE,
         related_name="comment_authors"
     )
 
@@ -259,10 +241,9 @@ class Comment(models.Model):
     issue = models.ForeignKey(
         Issue,
         on_delete=models.CASCADE,
-        blank=True,
         related_name="comments",
-        verbose_name=("related issue"),
-        help_text="Issue associated with comment",
+        verbose_name="related issue",
+        help_text="Issue associated with comment"
     )
 
     def __str__(self):

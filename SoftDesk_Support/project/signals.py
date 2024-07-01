@@ -32,19 +32,19 @@ def reassign_user_projects_issues_comments(sender, instance, **kwargs):
         raise ValueError("Aucun utilisateur administrateur trouvé pour réattribuer les projets.")
 
     # Réaffecter les projets
-    projects = Project.objects.filter(contributor_owner=instance)
+    projects = Project.objects.filter(author=instance)
     for project in projects:
-        project.contributor_owner = admin_user
+        project.author = admin_user
         project.save()
 
     # Réaffecter les issues
     issues = Issue.objects.filter(author=instance)
     for issue in issues:
-        issue.author = issue.project.contributor_owner
+        issue.author = issue.project.author
         issue.save()
 
     # Réaffecter les commentaires
     comments = Comment.objects.filter(author=instance)
     for comment in comments:
-        comment.author = comment.issue.project.contributor_owner
+        comment.author = comment.issue.project.author
         comment.save()

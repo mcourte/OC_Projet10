@@ -7,7 +7,7 @@ class ContributorInline(admin.TabularInline):
     Classe pour afficher les contributeurs en ligne dans l'interface d'administration.
     """
     model = Contributor
-    extra = 1  # Nombre de formulaires supplémentaires à afficher
+    extra = 1
 
 
 class ProjectAdmin(admin.ModelAdmin):
@@ -31,7 +31,7 @@ class ProjectAdmin(admin.ModelAdmin):
     )
     readonly_fields = ('created_time', 'updated_time')
     list_filter = ('project_type', 'created_time', 'updated_time', 'author')
-    inlines = [ContributorInline]  # Ajout de l'inline admin ici
+    inlines = [ContributorInline]
 
 
 class IssueAdmin(admin.ModelAdmin):
