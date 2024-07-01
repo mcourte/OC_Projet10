@@ -8,7 +8,7 @@ from rest_framework_simplejwt.views import (
 )
 from authentication.views import (
      RootView,
-     CustomUserViewSet,
+     CustomUserViewSet
 )
 from project.views import (
      ProjectListViewSet,
@@ -17,7 +17,6 @@ from project.views import (
      IssueViewSet,
      CommentViewSet
 )
-
 
 router = DefaultRouter()
 

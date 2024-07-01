@@ -140,6 +140,7 @@ class ContributorViewSet(viewsets.ModelViewSet):
 
 
 class IssueViewSet(viewsets.ModelViewSet):
+
     """
     Permet de gérer les opérations CRUD sur le modèle Issue.
     Create : Créer une Issue.
@@ -154,32 +155,22 @@ class IssueViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         project_id = self.kwargs.get('project_id')
         if self.action == 'list':
+            # Vérifie si l'utilisateur est un contributeur du projet
             project = get_object_or_404(Project, project_id=project_id)
-            user = self.request.user
-            if project.contributors.filter(pk=user.pk).exists() or project.author == user:
+            if project.contributors.filter(pk=self.request.user.pk).exists():
                 return Issue.objects.filter(project_id=project_id)
             else:
                 raise PermissionDenied("Vous n'êtes pas autorisé à voir les issues de ce projet.")
         return Issue.objects.all()
 
+    def perform_create(self, serializer):
+        project_id = self.request.data.get('project_id')
+        project = get_object_or_404(Project, project_id=project_id)
+        serializer.save(author=self.request.user, project=project)
+
     def post(self, request, *args, **kwargs):
         action = request.data.get('action', 'create')
-
-        if action == 'create':
-            project_id = request.data.get('project')
-            project = get_object_or_404(Project, id=project_id)
-            if not project.contributors.filter(id=request.user.id).exists():
-                raise PermissionDenied("Vous n'êtes pas autorisé à créer des problèmes pour ce projet.")
-            serializer = self.get_serializer(data=request.data)
-            if serializer.is_valid():
-                serializer.save(author=request.user)
-                return Response(
-                    {"message": "Le problème a été créé avec succès."},
-                    status=status.HTTP_201_CREATED
-                )
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-        elif action == 'update':
+        if action == 'update':
             instance = self.get_object()
             if request.user == instance.author:
                 serializer = self.get_serializer(instance, data=request.data, partial=True)
@@ -210,7 +201,7 @@ class IssueViewSet(viewsets.ModelViewSet):
 class CommentViewSet(viewsets.ModelViewSet):
     queryset = Comment.objects.all()
     serializer_class = CommentSerializer
-    lookup_field = 'comment_id'  # Assurez-vous que c'est le bon champ pour l'identification
+    lookup_field = 'comment_id'
 
     def get_queryset(self):
         issue_id = self.kwargs.get('issue_id')
@@ -219,14 +210,19 @@ class CommentViewSet(viewsets.ModelViewSet):
         return self.queryset.none()
 
     def create(self, request, *args, **kwargs):
-        project_id = self.kwargs["project_id"]
-        issue_id = self.kwargs["issue_id"]
+        issue_id = kwargs.get('issue_id')  # Utilisez kwargs pour récupérer issue_id
+
+        # Vérifiez si l'issue existe
         issue = get_object_or_404(Issue, issue_id=issue_id)
+
         serializer = self.get_serializer(data=request.data)
         if serializer.is_valid():
-            serializer.save(
-                author=self.request.user, issue=issue
+            serializer.save(author=request.user, issue=issue)
+            return Response(
+                {"message": "Le commentaire a été créé avec succès."},
+                status=status.HTTP_201_CREATED
             )
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def update(self, request, *args, **kwargs):
         instance = self.get_object()

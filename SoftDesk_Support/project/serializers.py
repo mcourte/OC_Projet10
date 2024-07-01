@@ -82,7 +82,7 @@ class IssueSerializer(serializers.ModelSerializer):
     project_id = serializers.PrimaryKeyRelatedField(queryset=Project.objects.all(), source='project', read_only=False)
     comment_count = serializers.SerializerMethodField()
     comment_titles = serializers.SerializerMethodField()
-    author = CustomUserAuthorContributorSerializer()
+    author = CustomUserAuthorContributorSerializer(read_only=True)
 
     class Meta:
         model = Issue
@@ -100,6 +100,8 @@ class IssueSerializer(serializers.ModelSerializer):
             'comment_count',
             'comment_titles'
         ]
+
+    read_only_fields = ['project_id', 'author']
 
     def get_comment_count(self, obj):
         return Comment.objects.filter(issue=obj).count()
