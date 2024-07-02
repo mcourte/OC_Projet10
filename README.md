@@ -105,7 +105,7 @@ En haut à droite utiliser le bouton Login et choisissez l'un des comptes utilis
 |------|---------------|----------------|
 | 1    | magali_c      | S3cretadmin!   |
 | 5    | florine_g     | S3cret!!!      |
-| 8    | user_two      | S3cret!!!      |
+| 8    | micki_courte  | S3cret!!!      |
 
 Concernant l'utilisation de POSTMAN, 3 environnements ont été créés, un pour chacun des utilisateurs du tableau précédent.  
 
@@ -116,8 +116,8 @@ Concernant l'utilisation de POSTMAN, 3 environnements ont été créés, un pour
 | #   | *Point de terminaison de l'API*                                           | *Méthode HTTP* | *URL (base: http://127.0.0.1:8000)*                               |
 |-----|---------------------------------------------------------------------------|----------------|-------------------------------------------------------------------|
 | 00  | Endpoint pour les administrateurs                                         | GET            | /api/admin/                                                       |
-| 1   | Inscription de l'utilisateur                                              | POST           | /api/user/                                                        |
-| 2   | Connexion de l'utilisateur                                                | POST           | /api/token/                                                       |
+| 1   | Inscription de l'utilisateur                                              | POST           | /api/register/                                                        |
+| 2   | Connexion de l'utilisateur                                                | POST           | /api-auth/login/                                                       |
 | 3   | Refresh Token de l'utilisateur                                            | POST           | /api/token/refresh/                                               |
 | 4   | Récupérer la liste de tous les projets                                    | GET            | /api/projects/                                                    |
 | 5   | Créer un projet                                                           | POST           | /api/projects/                                                    |
