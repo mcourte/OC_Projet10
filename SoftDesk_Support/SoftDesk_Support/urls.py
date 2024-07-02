@@ -8,7 +8,8 @@ from rest_framework_simplejwt.views import (
 )
 from authentication.views import (
      RootView,
-     CustomUserViewSet
+     CustomUserViewSet,
+     RegisterView
 )
 from project.views import (
      ProjectListViewSet,
@@ -19,6 +20,7 @@ from project.views import (
 )
 
 router = DefaultRouter()
+router.register(r'api/register', RegisterView, basename='register')
 
 urlpatterns = [
     path('', RootView.as_view(), name='root'),
