@@ -18,6 +18,7 @@ from project.views import (
      IssueViewSet,
      CommentViewSet
 )
+from django.contrib.auth.views import LogoutView
 
 router = DefaultRouter()
 router.register(r'api/register', RegisterView, basename='register')
@@ -32,6 +33,7 @@ urlpatterns = [
 
     # Authentication URLs
     path('api-auth/', include('rest_framework.urls')),
+    path('api/logout/', LogoutView.as_view(next_page='/'), name='logout'),
 
     # User URLs
     path('api/users/', CustomUserViewSet.as_view({'get': 'list', 'post': 'create'}), name='users'),
