@@ -52,16 +52,3 @@ class RegisterSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomUser
         fields = ['username', 'password', 'date_of_birth', 'can_be_contacted', 'can_data_be_shared']
-
-    def create(self, validated_data):
-        """
-        Crée un nouvel utilisateur avec les données validées.
-        """
-        user = CustomUser.objects.create_user(
-            username=validated_data['username'],
-            password=validated_data['password'],
-            date_of_birth=validated_data['date_of_birth'],
-            can_be_contacted=validated_data['can_be_contacted'],
-            can_data_be_shared=validated_data['can_data_be_shared']
-        )
-        return user

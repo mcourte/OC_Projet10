@@ -100,12 +100,9 @@ class RegisterView(viewsets.ViewSet):
         if serializer.is_valid():
             user = serializer.save()
             refresh = RefreshToken.for_user(user)
-            response = Response({
+            Response({
                 'refresh': str(refresh),
                 'access': str(refresh.access_token),
             }, status=status.HTTP_201_CREATED)
-            # Redirection après l'inscription
-            response['Location'] = '/api/projects/'
-            response.status_code = status.HTTP_303_SEE_OTHER
-            return response
+
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
