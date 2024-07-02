@@ -9,8 +9,7 @@ from rest_framework_simplejwt.views import (
 from authentication.views import (
      RootView,
      CustomUserViewSet,
-     RegisterView,
-     custom_logout_view
+     RegisterView
 )
 from project.views import (
      ProjectListViewSet,
@@ -19,7 +18,7 @@ from project.views import (
      IssueViewSet,
      CommentViewSet
 )
-
+from django.contrib.auth.views import LogoutView
 
 router = DefaultRouter()
 router.register(r'api/register', RegisterView, basename='register')
@@ -34,8 +33,7 @@ urlpatterns = [
 
     # Authentication URLs
     path('api-auth/', include('rest_framework.urls')),
-    path('api/logout/', custom_logout_view, name='custom_logout'),
-
+    path('api/logout/', LogoutView.as_view(next_page='/'), name='logout'),
 
     # User URLs
     path('api/users/', CustomUserViewSet.as_view({'get': 'list', 'post': 'create'}), name='users'),
