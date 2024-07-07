@@ -9,7 +9,8 @@ from rest_framework_simplejwt.views import (
 from authentication.views import (
      RootView,
      CustomUserViewSet,
-     RegisterView
+     RegisterView,
+     LoginView
 )
 from project.views import (
      ProjectListViewSet,
@@ -21,6 +22,7 @@ from project.views import (
 from django.contrib.auth.views import LogoutView
 
 router = DefaultRouter()
+router.register(r'api/login', LoginView, basename='login')
 router.register(r'api/register', RegisterView, basename='register')
 
 urlpatterns = [

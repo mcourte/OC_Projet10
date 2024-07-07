@@ -7,7 +7,6 @@ from .serializers import (
     CustomUserListSerializer,
     CustomUserDetailSerializer,
     RegisterSerializer
-
 )
 from .permissions import (
     IsAdmin,
@@ -15,6 +14,7 @@ from .permissions import (
 )
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.permissions import AllowAny
+from authentication.serializers import LoginSerializer
 
 
 class RootView(APIView):
@@ -26,6 +26,42 @@ class RootView(APIView):
         if not request.user.is_authenticated:
             return redirect('login')
         return redirect('projects')
+
+
+class LoginView(viewsets.ViewSet):
+    permission_classes = [AllowAny]
+    def create(self, request):
+        serializer = LoginSerializer(data=request.data)
+        if serializer.is_valid():
+            user = serializer.validated_data['user']
+            refresh = RefreshToken.for_user(user)
+            response = Response({
+                'refresh': str(refresh),
+                'access': str(refresh.access_token),
+            })
+            # Redirection après la connexion
+            response['Location'] = '/api/projects/'
+            response.status_code = status.HTTP_303_SEE_OTHER
+            return response
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class RegisterView(viewsets.ViewSet):
+    permission_classes = [AllowAny]
+    def create(self, request):
+        serializer = RegisterSerializer(data=request.data)
+        if serializer.is_valid():
+            user = serializer.save()
+            refresh = RefreshToken.for_user(user)
+            response = Response({
+                'refresh': str(refresh),
+                'access': str(refresh.access_token),
+            }, status=status.HTTP_201_CREATED)
+            # Redirection après l'inscription
+            response['Location'] = '/api/projects/'
+            response.status_code = status.HTTP_303_SEE_OTHER
+            return response
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class CustomUserViewSet(viewsets.ModelViewSet):
@@ -90,19 +126,4 @@ class CustomUserViewSet(viewsets.ModelViewSet):
             return self.destroy(request, *args, **kwargs)
         return Response({"detail": "Vous n'êtes pas autorisé à supprimer ce profil."},
                         status=status.HTTP_403_FORBIDDEN)
-
-
-class RegisterView(viewsets.ViewSet):
-    permission_classes = [AllowAny]
-
-    def create(self, request):
-        serializer = RegisterSerializer(data=request.data)
-        if serializer.is_valid():
-            user = serializer.save()
-            refresh = RefreshToken.for_user(user)
-            Response({
-                'refresh': str(refresh),
-                'access': str(refresh.access_token),
-            }, status=status.HTTP_201_CREATED)
-
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+  

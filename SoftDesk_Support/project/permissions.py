@@ -35,9 +35,18 @@ class IsContributor(permissions.BasePermission):
             return obj.issue.project
         return None
 
+    def has_permission(self, request, view):
+        # This method checks if the user is a contributor for the project related to the view
+        project_id = view.kwargs.get('project_id')
+        if project_id:
+            project = get_object_or_404(Project, project_id=project_id)
+            return project.contributors.filter(id=request.user.id).exists() or request.user == project.author
+        return False
+
     def has_object_permission(self, request, view, obj):
+        # This method checks if the user is a contributor for the specific object
         project = self._get_project_from_obj(obj)
-        if project and project.contributors.filter(id=request.user.id).exists():
+        if project and (project.contributors.filter(id=request.user.id).exists() or request.user == project.author):
             return True
         return False
 
