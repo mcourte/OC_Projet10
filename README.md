@@ -110,7 +110,7 @@ En haut à droite utiliser le bouton Login et choisissez l'un des comptes utilis
 Concernant l'utilisation de POSTMAN, 3 environnements ont été créés, un pour chacun des utilisateurs du tableau précédent.  
 
 
-#### Liste des points de terminaison de l'API (détaillés dans la [documentation](https://www.postman.com/mission-technologist-4095363/workspace/softdesk-support-api/collection/31959558-afa076dd-400c-48a3-bc19-424a35a94270?action=share&creator=31959558)) :
+#### Liste des points de terminaison de l'API (détaillés dans [POSTMAN](https://god.gw.postman.com/run-collection/31959558-afa076dd-400c-48a3-bc19-424a35a94270?action=collection%2Ffork&source=rip_markdown&collection-url=entityId%3D31959558-afa076dd-400c-48a3-bc19-424a35a94270%26entityType%3Dcollection%26workspaceId%3D2ed30e99-4f47-414f-84f4-66d18c395216)):  
 
 
 | #   | *Point de terminaison de l'API*                                           | *Méthode HTTP* | *URL (base: http://127.0.0.1:8000)*                               |
