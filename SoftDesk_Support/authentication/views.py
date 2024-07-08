@@ -14,7 +14,7 @@ from .permissions import (
 )
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.permissions import AllowAny
-from authentication.serializers import LoginSerializer
+from authentication.serializers import LoginSerializer, RegisterSerializer
 
 
 class RootView(APIView):
