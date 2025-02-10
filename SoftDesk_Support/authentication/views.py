@@ -2,6 +2,7 @@ from rest_framework import permissions, viewsets, status
 from django.shortcuts import redirect
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from rest_framework.exceptions import PermissionDenied
 from .models import CustomUser
 from .serializers import (
     CustomUserListSerializer,
@@ -120,10 +121,9 @@ class CustomUserViewSet(viewsets.ModelViewSet):
                             status=status.HTTP_403_FORBIDDEN)
         return super().partial_update(request, *args, **kwargs)
 
-    def delete(self, request, *args, **kwargs):
+    def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
         if self.request.user.is_superuser or self.request.user == instance:
-            return self.destroy(request, *args, **kwargs)
-        return Response({"detail": "Vous n'êtes pas autorisé à supprimer ce profil."},
-                        status=status.HTTP_403_FORBIDDEN)
-  
+            instance.delete()
+            return Response({"message": "L'utilisateur a été supprimé avec succès'."}, status=status.HTTP_204_NO_CONTENT)
+        raise PermissionDenied("Vous n'êtes pas autorisé à supprimer ce profil.")

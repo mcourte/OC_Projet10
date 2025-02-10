@@ -104,8 +104,7 @@ En haut à droite utiliser le bouton Login et choisissez l'un des comptes utilis
 | *ID* | *Identifiant* | *Mot de passe* |
 |------|---------------|----------------|
 | 1    | magali_c      | S3cretadmin!   |
-| 5    | florine_g     | S3cret!!!      |
-| 8    | micki_courte  | S3cret!!!      |
+
 
 Concernant l'utilisation de POSTMAN, 3 environnements ont été créés, un pour chacun des utilisateurs du tableau précédent.  
 

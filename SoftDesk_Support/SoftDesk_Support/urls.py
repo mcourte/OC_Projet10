@@ -1,5 +1,4 @@
 from django.contrib import admin
-from django.conf import settings
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from rest_framework_simplejwt.views import (
@@ -68,6 +67,3 @@ urlpatterns = [
 
     path('', include(router.urls)),
 ]
-
-if settings.DEBUG:
-    urlpatterns.append(path('api-auth/', include('rest_framework.urls')))
